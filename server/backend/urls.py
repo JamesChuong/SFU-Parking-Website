@@ -1,5 +1,5 @@
 """
-URL configuration for backend project.
+URL configuration for server project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -14,7 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 
-This backend/urls.py file routes high-level/project-level URLs to the appropriate app-level URL configurations.
+This server/urls.py file routes high-level/project-level URLs to the appropriate app-level URL configurations.
 It includes the URLs for the admin interface and the core app.
 """
 from django.contrib import admin
@@ -31,7 +31,7 @@ urlpatterns = [
     path('token/', jwt_views.TokenObtainPairView.as_view(), name ='token_obtain_pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name ='token_refresh'),
     path("admin/", admin.site.urls),
-    path('api/', include('core.urls')),
+    path('api/', include('server.core.urls')),
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'), Only if using simplejwt
     # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), Only if using simplejwt
 ]

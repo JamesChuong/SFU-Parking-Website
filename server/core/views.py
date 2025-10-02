@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import json
 from django.views.decorators.csrf import csrf_exempt
 
-from backend import settings
+from server.backend import settings
 from .models import *
 
 from .serializers import CourseSerializer, UserSerializer
