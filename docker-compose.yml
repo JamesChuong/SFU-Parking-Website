@@ -1,0 +1,48 @@
+# Docker containers for the Django server and MySQL database
+
+services:
+
+  django:
+
+    container_name: django_server
+    build:
+      context: /server
+    volumes:
+      - server_data:/data
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: 'racoon_database'
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - 8000:8000
+
+  mysql:
+
+    container_name: server_mysql_db
+    platform: linux/x86_64
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+      start_period: 5s
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    ports:
+      - 3306:3306
+
+volumes:
+
+  server_data:
+  db_data:
