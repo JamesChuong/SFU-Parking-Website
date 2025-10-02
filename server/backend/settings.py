@@ -98,7 +98,7 @@ SIMPLE_JWT = {
      'BLACKLIST_AFTER_ROTATION': False
 }
 
-ROOT_URLCONF = "server.backend.urls"
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
@@ -116,7 +116,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "server.wsgi.application"
+WSGI_APPLICATION = "backend.wsgi.application"
 
 
 # Database
