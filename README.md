@@ -18,7 +18,7 @@ the app needs
 ```
 DB_PASSWORD=<your_password>
 DB_USER=<your_username>
-DJANGO_SECRET_KEY:<your_key>
+DJANGO_SECRET_KEY=<your_key>
 ```
 
 ### Backend setup
@@ -38,7 +38,7 @@ source <venv_name>/bin/activate
 <venv_name>/Scripts/Activate
 ```
 
-#### Install Python dependencies (Not needed but avoids import errors in editor)
+#### Install Python dependencies
 ```bash
 pip install -r requirements.txt
 ```
