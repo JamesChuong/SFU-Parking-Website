@@ -31,14 +31,20 @@ services:
 
     environment:
       DJANGO_SETTINGS_MODULE: backend.settings
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: racoon_database
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
 
     volumes:
       - server_data:/data
     command: >
-      sh -c "python manage.py runcrons"
+      sh -c "python manage.py migrate django_cron && python manage.py runcrons"
     depends_on:
       - django
+      - mysql
 
   mysql:
 
@@ -59,7 +65,7 @@ services:
       timeout: 5s
       retries: 20
     ports:
-      - 3307:3306
+      - 3307:3306   # Port 3307 is used to prevent conflicts with MySQL running locally
 
 volumes:
 
