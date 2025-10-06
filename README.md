@@ -40,11 +40,13 @@ source <venv_name>/bin/activate
 
 #### Install Python dependencies
 ```bash
+cd server/
 pip install -r requirements.txt
 ```
 
 #### Run the backend (Docker)
 ```bash
+# Must be the root directory
 docker compose up
 ```
 > In case of port number conflicts, locate the app currently using the port and disable it
