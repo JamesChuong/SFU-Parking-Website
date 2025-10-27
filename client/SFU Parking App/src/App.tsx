@@ -20,7 +20,6 @@ function App() {
 
             setIsLoggedIn(isAuth)
 
-
         }, []
     )
 
