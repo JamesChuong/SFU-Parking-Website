@@ -3,9 +3,11 @@ import authenticationReducer from './redux.ts';
 
 export const store = configureStore(
     {
-        reducer: authenticationReducer
+        reducer: {
+            authentication: authenticationReducer
+        }
     }
 )
 
-export type AuthState = ReturnType<typeof store.getState>
+export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
