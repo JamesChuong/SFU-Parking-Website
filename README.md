@@ -100,7 +100,7 @@ Ensure that `Node.js` and `NPM` are installed (I'm currently using Node v20.12.2
 
 The following steps assume you are in the `client/sfu_parking_app` directory
 ```bash
-cd client/SFU Parking App
+cd client/sfu_parking_app
 ```
 #### Install NPM Packages
 
