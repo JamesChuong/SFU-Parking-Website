@@ -7,6 +7,7 @@ import {set_token} from "../redux_store/redux.ts";
 function RegistrationPage() {
 
     const [registrationError, setRegistrationError] = useState("");
+    const dispatch: AppDispatch = useDispatch();
 
     async function registerAccount(e: React.FormEvent<HTMLFormElement>) {
 
@@ -32,8 +33,6 @@ function RegistrationPage() {
             email: email,
             password: password
         };
-
-        const dispatch: AppDispatch = useDispatch();
 
         try {
 
