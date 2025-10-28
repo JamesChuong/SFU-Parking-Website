@@ -1,31 +1,61 @@
 import {registerUser, loginUser} from "./query_functions.ts";
-import {useState} from "react";
+import React, {useState} from "react";
 import type {registrationData, loginData} from "./query_functions.ts";
-
+import {useDispatch} from "react-redux";
+import type {AppDispatch} from "../redux_store/store.ts";
+import {set_token} from "../redux_store/redux.ts";
 function RegistrationPage() {
 
-    const [registrationError, setRegistrationError] = useState(null);
+    const [registrationError, setRegistrationError] = useState("");
 
-    function registerAccount(formData) {
+    async function registerAccount(e: React.FormEvent<HTMLFormElement>) {
 
-        const username: string = formData.get("username");
-        const email: string = formData.get("email");
-        const password: string = formData.get("password")
+        e.preventDefault();
+
+        const formData = new FormData(e.currentTarget);
+
+        const username: string = formData.get("username") as string;
+        const email: string = formData.get("email") as string;
+        const password: string = formData.get("password") as string;
+        const confirm_password: string = formData.get("confirm_password") as string;
+
+        if (confirm_password !== password) {
+
+            setRegistrationError("Passwords do not match");
+            console.log("passwords don't match");
+            return;
+
+        }
 
         const request: registrationData = {
             username: username,
             email: email,
             password: password
-        }
+        };
+
+        const dispatch: AppDispatch = useDispatch();
 
         try {
 
-            registerUser(request);
+            await registerUser(request);
 
-            setRegistrationError(null)
+            const login_data: loginData = {
+                username: username,
+                password: password
+            };
 
-        } catch (err){
-            setRegistrationError(err)
+            const token: string = await loginUser(login_data);
+
+            dispatch(set_token(token));
+
+            setRegistrationError("");
+
+        } catch (err: any) {
+
+            setRegistrationError(err);
+
+            console.log(registrationError);
+
         }
 
     }
@@ -40,13 +70,14 @@ function RegistrationPage() {
                     Create an Account
                 </h1>
 
-                <form className="flex flex-col items-center justify-center space-y-6 bg-white dark:bg-gray-800
+                <form onSubmit={registerAccount} className="flex flex-col items-center justify-center space-y-6 bg-white dark:bg-gray-800
                 p-8 rounded-2xl shadow-lg w-200 text-center text-[25px] font-medium text-black dark:text-white mb-6">
 
                     <div className="flex flex-col w-full items-center justify-center">
 
-                        <label name="username" className="">Username</label>
-                        <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70" type="text"/>
+                        <label className="">Username</label>
+                        <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
+                               type="text" name="username"/>
 
                     </div>
 
@@ -54,7 +85,8 @@ function RegistrationPage() {
                     <div className="flex flex-col w-full items-center justify-center">
 
                         <label className="">Email</label>
-                        <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70" type="email"/>
+                        <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
+                               type="email" name="email"/>
 
                     </div>
 
@@ -62,14 +94,23 @@ function RegistrationPage() {
 
                         <label className="">Password</label>
                         <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
-                               type="password"/>
+                               type="password" name="password"/>
+
+                    </div>
+
+                    <div className="flex flex-col w-full items-center justify-center">
+
+                        <label className="">Confirm Password</label>
+                        <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
+                               type="password" name="confirm_password"/>
 
                     </div>
 
                     <div className="flex flex-col w-full items-center justify-center py-5">
 
                         <button className="rounded-[5px] bg-gray-400 shadow-[2px]
-                        text-black border border-black w-70"> Sign Up </button>
+                        text-black border border-black w-70" type="submit"> Sign Up
+                        </button>
 
                     </div>
 
