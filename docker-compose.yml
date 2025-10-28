@@ -5,10 +5,13 @@ services:
   django:
 
     container_name: django_server
+
     build:
       context: ./server
+
     volumes:
       - server_data:/data
+
     environment:
       DJANGO_SETTINGS_MODULE: backend.settings
       DB_HOST: mysql
