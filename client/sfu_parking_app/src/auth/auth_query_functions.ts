@@ -24,7 +24,7 @@ async function registerUser(request: registrationData) {
 
 async function loginUser(request: loginData) {
 
-    const response = await axios_config.post("/api/token/", request);
+    const response = await axios_config.post("/token/", request);
 
     if (response.status != 200) {
         throw Error(response.data)

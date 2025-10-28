@@ -1,6 +1,6 @@
-import {registerUser, loginUser} from "./query_functions.ts";
+import {registerUser, loginUser} from "./auth_query_functions.ts";
 import React, {useState} from "react";
-import type {registrationData, loginData} from "./query_functions.ts";
+import type {registrationData, loginData} from "./auth_query_functions.ts";
 import {useDispatch} from "react-redux";
 import type {AppDispatch} from "../redux_store/store.ts";
 import {set_token} from "../redux_store/redux.ts";

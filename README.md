@@ -98,7 +98,7 @@ docker compose up
 
 Ensure that `Node.js` and `NPM` are installed (I'm currently using Node v20.12.2 and NPM v10.5.0)
 
-The following steps assume you are in the `client/SFU Parking App` directory
+The following steps assume you are in the `client/sfu_parking_app` directory
 ```bash
 cd client/SFU Parking App
 ```
