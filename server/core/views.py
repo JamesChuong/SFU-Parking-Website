@@ -41,6 +41,35 @@ class UserView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User: " + username + " not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    def post(self, request):
+
+        try:
+
+            serializer = UserSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            else:
+                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        except IntegrityError:
+
+            return Response({"error": "User with that username or email already exists"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request):
+
+        username = request.query_params.get('username', None)
+        try:
+            user = User.objects.get(username=username)
+            user.delete()
+            return Response(status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -63,43 +92,8 @@ class LogoutView(APIView):
             return Response({"error": "Logout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class RegisterView(APIView):
-
-    def post(self, request):
-
-        try:
-
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-            else:
-                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        except IntegrityError:
-
-            return Response({"error": "User with that email or username already exists"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-
 def test_view(request):
     return HttpResponse('Test view')
-
-
-class DeleteUserView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def delete(self, request):
-
-        username = request.query_params.get('username', None)
-        try:
-            user = User.objects.get(username=username)
-            user.delete()
-            return Response(status=status.HTTP_200_OK)
-
-        except User.DoesNotExist:
-            return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class DeleteAllCoursesView(APIView):
