@@ -76,7 +76,7 @@ function RegistrationPage() {
 
                         <label className="">Username</label>
                         <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
-                               type="text" name="username"/>
+                               type="text" name="username" required/>
 
                     </div>
 
@@ -85,7 +85,7 @@ function RegistrationPage() {
 
                         <label className="">Email</label>
                         <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
-                               type="email" name="email"/>
+                               type="email" name="email" required/>
 
                     </div>
 
@@ -93,7 +93,7 @@ function RegistrationPage() {
 
                         <label className="">Password</label>
                         <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
-                               type="password" name="password"/>
+                               type="password" name="password" required/>
 
                     </div>
 
@@ -101,7 +101,7 @@ function RegistrationPage() {
 
                         <label className="">Confirm Password</label>
                         <input className="text-black rounded-[5px] bg-white shadow-[2px] border border-black w-70"
-                               type="password" name="confirm_password"/>
+                               type="password" name="confirm_password" required/>
 
                     </div>
 

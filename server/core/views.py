@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 import requests  # Used to make requests to SFU Course API
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
 from django.db import IntegrityError, transaction
@@ -58,7 +59,6 @@ class UserView(APIView):
             return Response({"error": "User with that username or email already exists"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
     def delete(self, request):
 
         username = request.query_params.get('username', None)
@@ -71,50 +71,50 @@ class UserView(APIView):
             return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout(self, request):
+    try:
+        refresh_token = request.data["refresh_token"]
+        refresh_token = RefreshToken(refresh_token)
+        refresh_token.blacklist()
 
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh_token"]
-            refresh_token = RefreshToken(refresh_token)
-            refresh_token.blacklist()
+        response = Response(status=status.HTTP_205_RESET_CONTENT)
 
-            response = Response(status=status.HTTP_205_RESET_CONTENT)
+        if 'user_session' in request.COOKIES:
+            response.delete_cookie('user_session')
 
-            if 'user_session' in request.COOKIES:
-                response.delete_cookie('user_session')
+        return response
 
-            return response
-
-        except Exception as e:
-            logger.error(f"Logout failed: {str(e)}")
-            return Response({"error": "Logout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        logger.error(f"Logout failed: {str(e)}")
+        return Response({"error": "Logout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def test_view(request):
     return HttpResponse('Test view')
 
 
-class DeleteAllCoursesView(APIView):
+class UserCourseView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def delete(self, request):
+    def get(self, request):
+        department = request.query_params.get("department")
+        number = request.query_params.get("course_number")
+
+        if not department:
+            return JsonResponse({"error": "The department is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
 
-            with transaction.atomic():
-                user = User.objects.get(username=request.data["username"])
-                user.courses.all().delete()
-                user.save()
-                return Response(status=status.HTTP_200_OK)
+            # Check if the course exists in our database of all courses
+            course = get_object_or_404(Course, title=department, number=number)
 
-        except User.DoesNotExist:
-            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(CourseSerializer(course).data, status=status.HTTP_200_OK)
 
+        except Http404 as e:
 
-class AddCourseView(APIView):
-    permission_classes = (IsAuthenticated,)
+            return Response({"error": "Course does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
     # Adds a course to a user's schedule
     # Expects the request body to be a JSON representation of a course as defined in the models.py
@@ -154,12 +154,8 @@ class AddCourseView(APIView):
 
             return Response({"error": "No course or user found"}, status=status.HTTP_404_NOT_FOUND)
 
-
-class RemoveCourseView(APIView):
-    permission_classes = (IsAuthenticated,)
-
     # Removes a course from a user's schedule
-    def post(self, request):
+    def delete(self, request):
         username = request.data['username']
         course_name = request.data['course_name']
         section_name = request.data['section_name']
@@ -183,47 +179,11 @@ class RemoveCourseView(APIView):
                             status=status.HTTP_404_NOT_FOUND)
 
 
-class GetCourseView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        department = request.query_params.get("department")
-        number = request.query_params.get("course_number")
-
-        if not department:
-            return JsonResponse({"error": "The department is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-
-            # Check if the course exists in our database of all courses
-            course = get_object_or_404(Course, title=department, number=number)
-
-            return Response(CourseSerializer(course).data, status=status.HTTP_200_OK)
-
-        except Http404 as e:
-
-            return Response({"error": "Course does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Save a course's information into the database
-    def save_course_data(self, course_data):
-        Course.objects.update_or_create(
-            name=course_data.get("name"),
-            defaults={
-                "department": course_data.get("dept"),
-                "course_number": course_data.get("number"),
-                "section_name": course_data.get("section"),
-                "title": course_data.get("title"),
-                "description": course_data.get("description"),
-                "term": course_data.get("term"),
-                "units": course_data.get("units"),
-                "delivery_method": course_data.get("deliveryMethod"),
-            },
-        )
-
-
 # Given a set of course IDs, retrieve the course info associated with each section as a list
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_courses_from_ids(request):
-    course_id_params = request.GET.get('course_ids', '')
+    course_id_params = request.query_params.get('course_ids', '')
 
     if course_id_params:
 
@@ -265,6 +225,40 @@ def get_courses_from_ids(request):
                     status=status.HTTP_200_OK)
 
 
+class UserAllCoursesView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+
+        username = request.query_params.get('username')
+
+        try:
+
+            user = get_object_or_404(User, username=username)
+            courses = user.Courses.all()
+
+            return Response(CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK)
+
+        except Http404 as e:
+
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request):
+
+        try:
+
+            with transaction.atomic():
+                user = User.objects.get(username=request.POST.data["username"])
+                user.courses.all().delete()
+                user.save()
+                return Response(status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def fetch_all_courses(request):
     courses = Course.objects.all().values()
     return JsonResponse(list(courses), safe=False, status=status.HTTP_200_OK)
