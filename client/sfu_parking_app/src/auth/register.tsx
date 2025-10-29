@@ -1,6 +1,6 @@
 import {registerUser, loginUser} from "./auth_query_functions.ts";
 import React, {useState} from "react";
-import type {registrationData, loginData} from "./auth_query_functions.ts";
+import type {RegistrationData, LoginData} from "./auth_query_functions.ts";
 import {useDispatch} from "react-redux";
 import type {AppDispatch} from "../redux_store/store.ts";
 import {set_token} from "../redux_store/redux.ts";
@@ -13,12 +13,12 @@ function RegistrationPage() {
 
         e.preventDefault();
 
-        const formData = new FormData(e.currentTarget);
+        const form_data = new FormData(e.currentTarget);
 
-        const username: string = formData.get("username") as string;
-        const email: string = formData.get("email") as string;
-        const password: string = formData.get("password") as string;
-        const confirm_password: string = formData.get("confirm_password") as string;
+        const username: string = form_data.get("username") as string;
+        const email: string = form_data.get("email") as string;
+        const password: string = form_data.get("password") as string;
+        const confirm_password: string = form_data.get("confirm_password") as string;
 
         if (confirm_password !== password) {
 
@@ -28,7 +28,7 @@ function RegistrationPage() {
 
         }
 
-        const request: registrationData = {
+        const request: RegistrationData = {
             username: username,
             email: email,
             password: password
@@ -38,7 +38,7 @@ function RegistrationPage() {
 
             await registerUser(request);
 
-            const login_data: loginData = {
+            const login_data: LoginData = {
                 username: username,
                 password: password
             };

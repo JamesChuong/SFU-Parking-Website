@@ -8,7 +8,7 @@ import {useSelector} from "react-redux";
 // @ts-ignore
 import type { RootState, AppDispatch } from './redux_store/store';
 import './utils/protected_route.tsx'
-import ProtectedRoute from "./utils/protected_route.tsx";
+import {ProtectedRoute} from "./utils/protected_route.tsx";
 function App() {
 
     const [isLoggedIn, setIsLoggedIn] = useState(false)
