@@ -13,7 +13,7 @@ interface loginData {
 
 async function registerUser(request: registrationData) {
 
-    const response = await axios_config.post("/api/user/register/", request);
+    const response = await axios_config.post("/api/user/", request);
 
     if (response.status !== 201){
         throw Error(response.data);
