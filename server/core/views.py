@@ -1,17 +1,16 @@
 import logging
 from itertools import chain
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 import requests  # Used to make requests to SFU Course API
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
-from django.views.decorators.csrf import csrf_exempt
+from django.db import IntegrityError, transaction
 
-from backend import settings
 from .models import *
 
 from .serializers import CourseSerializer, UserSerializer
-import io
 from .utils import *
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -49,13 +48,12 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            refresh_token = RefreshToken(refresh_token)
+            refresh_token.blacklist()
+
             response = Response(status=status.HTTP_205_RESET_CONTENT)
 
             if 'user_session' in request.COOKIES:
-                print("We found a cookie!")
-                print(f"We are about to delete this cookie: {request.COOKIES['user_session']}")
                 response.delete_cookie('user_session')
 
             return response
@@ -68,15 +66,21 @@ class LogoutView(APIView):
 class RegisterView(APIView):
 
     def post(self, request):
-        if User.objects.filter(username=request.data["username"]).exists():
-            return Response({"error": "This username is already taken"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"error": "There was an issue processing your request"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+
+            serializer = UserSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            else:
+                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        except IntegrityError:
+
+            return Response({"error": "User with that email or username already exists"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 def test_view(request):
@@ -86,9 +90,11 @@ def test_view(request):
 class DeleteUserView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def delete(self, request):
+
+        username = request.query_params.get('username', None)
         try:
-            user = User.objects.get(username=request.data["username"])
+            user = User.objects.get(username=username)
             user.delete()
             return Response(status=status.HTTP_200_OK)
 
@@ -102,72 +108,84 @@ class DeleteAllCoursesView(APIView):
     def delete(self, request):
 
         try:
-            user = User.objects.get(username=request.data["username"])
-            user.courses.all().delete()
-            user.save()
-            return Response(status=status.HTTP_200_OK)
+
+            with transaction.atomic():
+                user = User.objects.get(username=request.data["username"])
+                user.courses.all().delete()
+                user.save()
+                return Response(status=status.HTTP_200_OK)
+
         except User.DoesNotExist:
-            return Response(self, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class AddCourseView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    # Adds a course to a user's schedule
     # Expects the request body to be a JSON representation of a course as defined in the models.py
     # Front-end must create this format
     def post(self, request):
         username = request.data['username']
-        course_name = request.data["courseName"]
-        section_name = request.data["sectionName"]
+        course_name = request.data["course_name"]
+        section_name = request.data["section_name"]
 
-        # Check if the course doesn't exist in the database
-        if not Course.objects.filter(title=course_name, section_name=section_name).exists():
-            return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+        try:
 
-        # Get the course object
-        new_course = Course.objects.filter(title=course_name, section_name=section_name).first()
+            # Get the course object
+            new_course = get_object_or_404(Course, title=course_name, section_name=section_name)
 
-        # Get the user's courses by username
-        if not User.objects.filter(username=username).exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            # Get the user's courses by username
 
-        user = User.objects.get(username=username)
-        existing_courses = user.Courses.all()
+            user = get_object_or_404(User, username=username)
+            existing_courses = user.Courses.all()
 
-        # Check for time conflicts using the helper function
-        conflicts = check_time_conflicts(new_course, existing_courses)
+            # Check for time conflicts using the helper function
+            conflicts = check_time_conflicts(new_course, existing_courses)
 
-        if conflicts:
-            # If conflicts are found, return them in the response
-            return Response({
-                "error": "Time conflicts detected",
-                "conflicts": conflicts
-            }, status=status.HTTP_409_CONFLICT)
+            if conflicts:
+                # If conflicts are found, return them in the response
+                return Response({
+                    "error": "Time conflicts detected",
+                    "conflicts": conflicts
+                }, status=status.HTTP_409_CONFLICT)
 
-        # If no conflicts, add the course to the user's schedule
-        user.Courses.add(new_course)
-        user.save()
+            # If no conflicts, add the course to the user's schedule
+            user.Courses.add(new_course)
+            user.save()
 
-        return Response({"success": "Course added successfully"}, status=status.HTTP_200_OK)
+            return Response({"success": "Course added successfully"}, status=status.HTTP_200_OK)
+
+        except Http404 as e:
+
+            return Response({"error": "No course or user found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-class DeleteCourseView(APIView):
+class RemoveCourseView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    # Removes a course from a user's schedule
     def post(self, request):
         username = request.data['username']
         course_name = request.data['course_name']
         section_name = request.data['section_name']
+
         if not username or not course_name:
             return Response({"error": "Username or course name was not given"}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=username).exists() and Course.objects.filter(title=course_name).exists():
-            user = User.objects.get(username=username)
-            course = Course.objects.get(title=course_name, section_name=section_name)
-            user.Courses.remove(course)
-            user.save()
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Course could not be removed from your schedule"},
+
+        try:
+
+            with transaction.atomic():
+
+                user = get_object_or_404(User, username=username)
+                course = get_object_or_404(Course, title=course_name, section_name=section_name)
+
+                user.courses.remove(course)
+                user.save()
+
+        except Http404 as e:
+
+            return Response({"error": "course could not be removed from your schedule"},
                             status=status.HTTP_404_NOT_FOUND)
 
 
@@ -176,34 +194,21 @@ class GetCourseView(APIView):
 
     def get(self, request):
         department = request.query_params.get("department")
-        number = request.query_params.get("courseNumber")
+        number = request.query_params.get("course_number")
 
         if not department:
-            return JsonResponse({"error": "The department is required"}, status=400)
+            return JsonResponse({"error": "The department is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the course exists in our database of all courses
-        course = Course.objects.filter(department=department, course_number=number, term=CURRENT_TERM_CODE).first()
-        if course:
-            # If the course exists, return it
+        try:
+
+            # Check if the course exists in our database of all courses
+            course = get_object_or_404(Course, title=department, number=number)
+
             return Response(CourseSerializer(course).data, status=status.HTTP_200_OK)
 
-        # Else, if the course is not found, fetch it from the Course Outline API:
-        try:
-            api_url = f"https://www.sfu.ca/bin/wcm/course-outlines?{CURRENT_YEAR}/{CURRENT_TERM_CODE}/{department}"
-            if number:
-                api_url += f"/{number}"
+        except Http404 as e:
 
-            response = requests.get(api_url)
-            response.raise_for_status()
-
-            course_data = response.json()
-            self.save_course_data(course_data)
-
-            return JsonResponse(course_data, safe=False)
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Course data fetch failed: {str(e)}")
-            return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Course does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
     # Save a course's information into the database
     def save_course_data(self, course_data):
@@ -221,47 +226,54 @@ class GetCourseView(APIView):
             },
         )
 
-    # Given a set of course IDs, retrieve the course info associated with each section as a list
-    def post(self, request):
-        course_ids = request.data["course_ids"]
 
-        courses = Course.objects.filter(id__in=course_ids).values()
+# Given a set of course IDs, retrieve the course info associated with each section as a list
+def get_courses_from_ids(request):
+    course_id_params = request.GET.get('course_ids', '')
 
-        lecture_sections_no_lab = LectureSection.objects.filter(course_id__in=course_ids).values()
+    if course_id_params:
 
-        titles = [course['title'] for course in courses]
-        section_codes = [course['section_name'] for course in courses]
-        course_numbers = [course['course_number'] for course in courses]
+        course_ids = [course_id for course_id in course_id_params.split(',')]
 
-        non_lecture_components = NonLectureSection.objects.filter(number__in=course_numbers
-                                                                  , title__in=titles
-                                                                  , section_code__in=section_codes).values()
+    else:
 
-        non_lecture_professors = [component['professor'] for component in non_lecture_components]
-        non_lecture_titles = [component['title'] for component in non_lecture_components]
-        non_lecture_numbers = [component['number'] for component in non_lecture_components]
+        course_ids = []
 
-        lecture_sections_with_lab = LectureSection.objects.filter(professor__in=non_lecture_professors
-                                                                  , number__in=non_lecture_numbers
-                                                                  , title__in=non_lecture_titles).values()
+    courses = Course.objects.filter(id__in=course_ids).values()
+    if not courses:
+        return Response({"error": "Courses could not be retrieved"}, status=status.HTTP_400_BAD_REQUEST)
 
-        lecture_sections = list(
-            {tuple(section.items()) for section in chain(lecture_sections_no_lab, lecture_sections_with_lab)})
+    lecture_sections_no_lab = LectureSection.objects.filter(course_id__in=course_ids).values()
 
-        lecture_sections = [dict(section) for section in lecture_sections]
+    titles = [course['title'] for course in courses]
+    section_codes = [course['section_name'] for course in courses]
+    course_numbers = [course['course_number'] for course in courses]
 
-        if not courses:
-            return Response({"error": "Courses could not be retrieved"}, status=status.HTTP_400_BAD_REQUEST)
+    non_lecture_components = NonLectureSection.objects.filter(number__in=course_numbers,
+                                                              title__in=titles,
+                                                              section_code__in=section_codes).values()
 
-        return Response({"lecture_sections": list(lecture_sections)
-                            , "non_lecture_sections": list(non_lecture_components)}
-                        , status=status.HTTP_200_OK)
+    non_lecture_professors = [component['professor'] for component in non_lecture_components]
+    non_lecture_titles = [component['title'] for component in non_lecture_components]
+    non_lecture_numbers = [component['number'] for component in non_lecture_components]
+
+    lecture_sections_with_lab = LectureSection.objects.filter(professor__in=non_lecture_professors,
+                                                              number__in=non_lecture_numbers,
+                                                              title__in=non_lecture_titles).values()
+
+    lecture_sections = list(
+        {tuple(section.items()) for section in chain(lecture_sections_no_lab, lecture_sections_with_lab)})
+
+    lecture_sections = [dict(section) for section in lecture_sections]
+
+    return Response({"lecture_sections": list(lecture_sections),
+                     "non_lecture_sections": list(non_lecture_components)},
+                    status=status.HTTP_200_OK)
 
 
-# Returns all courses to scheduleBuilder.js in the frontend via url
 def fetch_all_courses(request):
     courses = Course.objects.all().values()
-    return JsonResponse(list(courses), safe=False)
+    return JsonResponse(list(courses), safe=False, status=status.HTTP_200_OK)
 
 
 # Get the user's list of courses
@@ -312,8 +324,6 @@ class GetNonLectureSectionsView(APIView):
 class ApproveCookieView(APIView):
 
     def get(self, request):
-
-        print(f"The user just launched the website with these cookies: {request.COOKIES}")
         if 'user_session' in request.COOKIES:
             return Response({"status: Cookie found"}, status=status.HTTP_200_OK)
 
@@ -341,7 +351,7 @@ class SetCookieView(APIView):
             httponly=True,
             secure=True,  # Set to True if using HTTPS
             samesite='None',  # or 'None' if using HTTPS
-            max_age=3600*24,
+            max_age=3600 * 24,
             path='/'
         )
         # print(response.cookies.get('user_session'))

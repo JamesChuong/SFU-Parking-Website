@@ -5,7 +5,7 @@ course management, and fetching course data from the SFU REST API.
 
 from django.urls import path
 
-from core import views
+from .core import views
 from .views import *
 
 # New view which fetches course data
@@ -17,10 +17,11 @@ urlpatterns = [
     path('user/delete/', views.DeleteUserView.as_view(), name='delete-user'),
     path('user/courses/delete/all/', views.DeleteAllCoursesView.as_view(), name='delete-all-courses'),
     path('user/courses/add/', views.AddCourseView.as_view(), name='add-course'),
-    path('user/courses/delete/', views.DeleteCourseView.as_view(), name='delete-a-course'),
-    path('user/courses/get/', views.GetCourseView.as_view(), name='get-course'),
+    path('user/courses/remove/', views.RemoveCourseView.as_view(), name='delete-a-course'),
+    path('/courses/', views.GetCourseView.as_view(), name='get-course'),
     # path('user/courses/get/all', GetUserCoursesView.as_view(), name='get-user-courses'),
     path('courses/', fetch_all_courses, name='fetch-all-courses'),
+    path('courses/', get_courses_from_ids, name='fetch-courses-from-ids'),
     path('courses/<int:course_id>/lectures/', views.GetLectureSectionsView.as_view(), name='get-lecture-sections'),
     path('lectures/<int:lecture_section_id>/non-lectures/', views.GetNonLectureSectionsView.as_view(),
          name='get-non-lecture-sections'),
