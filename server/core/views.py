@@ -70,6 +70,28 @@ class UserView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    def put(self, request):
+
+        try:
+
+            with transaction.atomic():
+
+                user = User.objects.get(username=request.data['username'])
+
+                if user.DoesNotExist:
+
+                    return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+
+                serializer = UserSerializer(user, data=request.data)
+
+                if serializer.is_valid():
+
+                    serializer.save()
+
+        except IntegrityError:
+
+            return Response({"error": "User with that username or email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -87,7 +109,6 @@ def logout(self, request):
         return response
 
     except Exception as e:
-        logger.error(f"Logout failed: {str(e)}")
         return Response({"error": "Logout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -101,9 +122,6 @@ class UserCourseView(APIView):
     def get(self, request):
         department = request.query_params.get("department")
         number = request.query_params.get("course_number")
-
-        if not department:
-            return JsonResponse({"error": "The department is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
 
@@ -283,14 +301,17 @@ class GetLectureSectionsView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, course_id):
-        try:
-            course = Course.objects.get(id=course_id)
-            lecture_sections = course.lecturesection_set.all()  # Fetch related lecture sections
-            data = [{"id": ls.id, "section_code": ls.section_code, "start_time": ls.start_time, "end_time": ls.end_time}
-                    for ls in lecture_sections]
-            return JsonResponse(data, safe=False)
-        except Course.DoesNotExist:
+
+        course = Course.objects.get(id=course_id)
+
+        if course.DoesNotExist:
             return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        lecture_sections = course.lecturesection_set.all()  # Fetch related lecture sections
+        data = [{"id": ls.id, "section_code": ls.section_code, "start_time": ls.start_time, "end_time": ls.end_time}
+                for ls in lecture_sections]
+
+        return JsonResponse(data, safe=False)
 
 
 class GetNonLectureSectionsView(APIView):
