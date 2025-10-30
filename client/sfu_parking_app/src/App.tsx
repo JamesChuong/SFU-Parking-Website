@@ -12,7 +12,7 @@ import {ProtectedRoute} from "./utils/protected_route.tsx";
 import {finish_loading, set_token} from "./redux_store/redux.ts";
 function App() {
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    // const [isLoggedIn, setIsLoggedIn] = useState(false)
     const dispatch = useDispatch();
 
     const { isAuthenticated, isLoading } = useSelector(
@@ -24,11 +24,10 @@ function App() {
             const token = sessionStorage.getItem("access_token")
             if (token) {
                 dispatch(set_token(token)); // reauthenticate using saved token
-                setIsLoggedIn(true)
+                // setIsLoggedIn(true)
             } else {
                 dispatch(finish_loading()); // mark loading as complete
             }
-
         }, [dispatch]
     )
 
@@ -43,7 +42,7 @@ function App() {
                 {/* Add Routes as needed */}
 
                 <Route path='/dashboard' element={
-                    <ProtectedRoute isLoggedIn={isLoggedIn}>
+                    <ProtectedRoute isLoggedIn={isAuthenticated}>
                         <Dashboard />
                     </ProtectedRoute>
                 }

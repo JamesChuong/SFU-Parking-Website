@@ -38,14 +38,11 @@ function LoginPage() {
 
             // Get route redirected from
             const from = location.state || null
-            console.log(from)
             if (from === null){
                 navigate("/dashboard", {replace: true})
             } else {
                 navigate(from, { replace: true });
             }
-
-            window.location.reload();
 
 
         } catch (err) {
