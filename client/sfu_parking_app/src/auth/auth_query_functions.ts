@@ -1,17 +1,17 @@
 import axios_config from "../axios_config.tsx";
 
-interface registrationData {
+interface RegistrationData {
     username: string,
     email: string,
     password: string
 }
 
-interface loginData {
+interface LoginData {
     username: string,
     password: string
 }
 
-async function registerUser(request: registrationData) {
+async function registerUser(request: RegistrationData) {
 
     const response = await axios_config.post("/api/user/", request);
 
@@ -22,7 +22,7 @@ async function registerUser(request: registrationData) {
 }
 
 
-async function loginUser(request: loginData) {
+async function loginUser(request: LoginData) {
 
     const response = await axios_config.post("/token/", request);
 
@@ -36,4 +36,4 @@ async function loginUser(request: loginData) {
 
 
 export {registerUser, loginUser}
-export type {registrationData, loginData}
+export type {RegistrationData, LoginData}

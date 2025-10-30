@@ -4,24 +4,17 @@ import { Route, Routes} from "react-router";
 import Dashboard from "./homepage/dashboard.tsx";
 import LoginPage from "./auth/login.tsx";
 import RegistrationPage from "./auth/register.tsx";
-import {useSelector} from "react-redux";
+import { useSelector } from "react-redux";
 // @ts-ignore
 import type { RootState, AppDispatch } from './redux_store/store';
 import './utils/protected_route.tsx'
-import ProtectedRoute from "./utils/protected_route.tsx";
+import {ProtectedRoute} from "./utils/protected_route.tsx";
+import Test from "./test.tsx";
 function App() {
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-    const isAuth = useSelector((state: RootState) => state.authentication.isAuthenticated);
-
-    useEffect(
-        ()=>{
-
-            setIsLoggedIn(isAuth)
-
-        }, []
-    )
+    const { isAuthenticated } = useSelector(
+        (state: RootState) => state.authentication
+    );
 
     return (
         <>
@@ -29,10 +22,18 @@ function App() {
             <Routes>
                 {/* Add Routes as needed */}
 
+
+                <Route path='/' element={
+                    <ProtectedRoute isLoggedIn={isAuthenticated} children={<Dashboard />}/>
+                } />
+
                 <Route path='/dashboard' element={
-                    <ProtectedRoute isLoggedIn={isLoggedIn}>
-                        <Dashboard />
-                    </ProtectedRoute>
+                    <ProtectedRoute isLoggedIn={isAuthenticated} children={<Dashboard />}/>
+                }
+                />
+
+                <Route path='/test' element={
+                    <ProtectedRoute isLoggedIn={isAuthenticated} children={<Test />}/>
                 }
                 />
 

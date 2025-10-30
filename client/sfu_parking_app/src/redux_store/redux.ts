@@ -1,14 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+const token = sessionStorage.getItem("access_token");
 
 interface authenticationState {
     token: string | null,
-    isAuthenticated: boolean
+    isAuthenticated: boolean,
 }
 
 let initialState: authenticationState = {
-    token: null,
-    isAuthenticated: false
+    token: token,
+    isAuthenticated: !!token,
 }
 
 const authenticationSlice = createSlice({
@@ -16,13 +17,15 @@ const authenticationSlice = createSlice({
     initialState,
     reducers: {
         set_token: (state, action) => {
+            sessionStorage.setItem("access_token", action.payload)
             state.token = action.payload   // payload contains the token
             state.isAuthenticated = true
         },
         remove_token: (state) => {
+            sessionStorage.removeItem("access_token")
             state.token = null
             state.isAuthenticated = false
-        }
+        },
     }
 })
 
