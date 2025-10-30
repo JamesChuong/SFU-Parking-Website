@@ -19,19 +19,15 @@ function LoginPage() {
 
 
     useEffect(() => {
-    if (isAuthenticated) {
+        if (isAuthenticated) {
 
-        // Get route redirected from
-        const from = location.state || null
-        console.log(`User is logged in, navigating to ${from}`)
-        if (from === null){
-            navigate("/dashboard", {replace: true})
-        } else {
+            // Get route redirected from
+            const from = (location.state as { from?: string })?.from || "/dashboard";
+
             navigate(from, { replace: true });
+
         }
-        window.location.reload();
-    }
-}, [isAuthenticated, navigate]);
+    }, [isAuthenticated, navigate, location]);
 
     async function loginAccount(e: React.FormEvent<HTMLFormElement>){
 
@@ -50,7 +46,6 @@ function LoginPage() {
         try{
 
             const access_token: string = await loginUser(request);
-            // const access_token = "test"
             dispatch(set_token(access_token))
 
         } catch (err) {
