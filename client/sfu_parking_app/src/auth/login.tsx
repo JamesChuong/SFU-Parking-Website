@@ -1,13 +1,13 @@
-import React from "react";
+import React, {useEffect} from "react";
 import type {LoginData} from "./auth_query_functions.ts";
 import {loginUser} from "./auth_query_functions.ts";
 import {useState} from "react";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import type {AppDispatch} from "../redux_store/store.ts";
 import {set_token} from "../redux_store/redux.ts";
 import {useNavigate} from "react-router";
 import {useLocation} from "react-router-dom";
-
+import type {RootState} from "../redux_store/store.ts";
 function LoginPage() {
 
     const [loginError, setLoginError] = useState("");
@@ -15,6 +15,19 @@ function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch: AppDispatch = useDispatch()
+    const { isAuthenticated } = useSelector((state: RootState) => state.authentication);
+
+
+    useEffect(() => {
+        if (isAuthenticated) {
+
+            // Get route redirected from
+            const from = (location.state as { from?: string })?.from || "/dashboard";
+
+            navigate(from, { replace: true });
+
+        }
+    }, [isAuthenticated, navigate, location]);
 
     async function loginAccount(e: React.FormEvent<HTMLFormElement>){
 
@@ -33,17 +46,7 @@ function LoginPage() {
         try{
 
             const access_token: string = await loginUser(request);
-
             dispatch(set_token(access_token))
-
-            // Get route redirected from
-            const from = location.state || null
-            if (from === null){
-                navigate("/dashboard", {replace: true})
-            } else {
-                navigate(from, { replace: true });
-            }
-
 
         } catch (err) {
             setLoginError(err)
