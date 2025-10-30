@@ -18,23 +18,25 @@ function App() {
     const { isAuthenticated, isLoading } = useSelector(
         (state: RootState) => state.authentication
     );
-    useEffect(
-        ()=>{
+    // useEffect(
+    //     ()=>{
+    //
+    //         const token = sessionStorage.getItem("access_token")
+    //         if (token) {
+    //             dispatch(set_token(token)); // reauthenticate using saved token
+    //             setIsLoggedIn(true)
+    //         } else {
+    //             dispatch(finish_loading()); // mark loading as complete
+    //         }
+    //
+    //     }, [dispatch]
+    // )
 
-            const token = sessionStorage.getItem("access_token")
-            if (token) {
-                dispatch(set_token(token)); // reauthenticate using saved token
-                setIsLoggedIn(true)
-            } else {
-                dispatch(finish_loading()); // mark loading as complete
-            }
+    // if (isLoading) {
+    //     return <div>Loading...</div>;
+    // }
 
-        }, [dispatch]
-    )
-
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
+    console.log(`The user is logged in: ${isAuthenticated}`)
 
     return (
         <>
@@ -42,10 +44,13 @@ function App() {
             <Routes>
                 {/* Add Routes as needed */}
 
+
+                <Route path='/' element={
+                    <ProtectedRoute isLoggedIn={isAuthenticated} children={<Dashboard />}/>
+                } />
+
                 <Route path='/dashboard' element={
-                    <ProtectedRoute isLoggedIn={isLoggedIn}>
-                        <Dashboard />
-                    </ProtectedRoute>
+                    <ProtectedRoute isLoggedIn={isAuthenticated} children={<Dashboard />}/>
                 }
                 />
 
