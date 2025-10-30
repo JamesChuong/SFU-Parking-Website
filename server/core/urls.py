@@ -5,7 +5,7 @@ course management, and fetching course data from the SFU REST API.
 
 from django.urls import path
 
-from .core import views
+from . import views
 from .views import *
 
 # New view which fetches course data
@@ -15,8 +15,6 @@ urlpatterns = [
     path('user/', views.UserView.as_view(), name='user'),
     path('user/courses/all/', views.UserAllCoursesView.as_view(), name='all-user-courses'),
     path('user/courses/', views.UserCourseView.as_view(), name='user-course'),
-    path('/courses/get/', views.GetCourseView.as_view(), name='get-course'),
-    # path('user/courses/get/all', GetUserCoursesView.as_view(), name='get-user-courses'),
     path('courses/get/all/', fetch_all_courses, name='fetch-all-courses'),
     path('courses/get/', get_courses_from_ids, name='fetch-courses-from-ids'),
     path('courses/<int:course_id>/lectures/', views.GetLectureSectionsView.as_view(), name='get-lecture-sections'),

@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 class UserView(APIView):
-    permission_classes = (IsAuthenticated,)
 
     # Retrieve user info if logged in
+    @permission_classes([IsAuthenticated])
     def get(self, request):
 
         username = request.query_params.get('username')
@@ -59,6 +59,7 @@ class UserView(APIView):
             return Response({"error": "User with that username or email already exists"},
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @permission_classes([IsAuthenticated])
     def delete(self, request):
 
         username = request.query_params.get('username', None)
