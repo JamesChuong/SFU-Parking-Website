@@ -7,7 +7,6 @@ import logging
 from django.utils.dateparse import parse_time
 from dateutil import parser
 
-
 #Course.objects.all().delete()  # TODO: For debugging only
 
 logger = logging.getLogger(__name__)
@@ -40,6 +39,18 @@ class SyncCoursesCronJob(CronJobBase):
                     course_number = course.get("value")
                     logger.info(f"Processing course number: {course_number}")
 
+                    course_obj, created = Course.objects.get_or_create(
+                        title=course.get("title", "Untitled Course"),
+                        department=department,
+                        course_number=course_number,
+                        # defaults={
+                        #     "description": info.get("description", ""),
+                        #     "term": info.get("term", ""),
+                        #     "delivery_method": info.get("deliveryMethod", ""),
+                        #     "section_name": info.get("section")
+                        # }
+                    )
+
                     sections_url = f"https://www.sfu.ca/bin/wcm/course-outlines?{current_year}/{current_term}/{department}/{course_number}"
                     sections_response = requests.get(sections_url)
                     sections_response.raise_for_status()
@@ -57,88 +68,85 @@ class SyncCoursesCronJob(CronJobBase):
                         details_url = f"https://www.sfu.ca/bin/wcm/course-outlines?{current_year}/{current_term}/{department}/{course_number}/{section_code}"
                         details_response = requests.get(details_url)
                         details_response.raise_for_status()
-                        course_details = details_response.json()
+                        section_details = details_response.json()
 
-                        logger.debug(f"Course details fetched: {course_details} with url: {details_url}")
+                        logger.debug(f"Course details fetched: {section_details} with url: {details_url}")
 
-                        info = course_details.get("info", {})
-                        course_schedules = course_details.get("courseSchedule", [])
-                        first_instructor = course_details.get("instructor", [{}])[0]  # Get first instructor if available
+                        info = section_details.get("info", {})
+                        schedule = section_details.get("courseSchedule", [])
+                        first_instructor = section_details.get("instructor", [{}])[
+                            0]  # Get first instructor if available
 
-                        course_obj, created = Course.objects.update_or_create(
-                            title=info.get("title", "Untitled Course"),
-                            department=info.get("dept", department),
-                            class_number=info.get("classNumber", 0),
-                            course_number=info.get("number", 0),
-                            defaults={
-                                "description": info.get("description", ""),
-                                "term": info.get("term", ""),
-                                "delivery_method": info.get("deliveryMethod", ""),
-                                "section_name": info.get("section")
-                            }
-                        )
+                        if section.get("sectionCode") == "LEC" and text_value == info.get("section"):
+                            # Create LectureSection
+                            # parsed_start_time = parse_time(schedule.get("startTime", ""))
+                            # parsed_end_time   = parse_time(schedule.get("endTime", ""))
+                            parsed_start_date = parse_date(schedule[0].get("startDate", ""))
+                            parsed_end_date = parse_date(schedule[0].get("endDate", ""))
 
-                        for schedule in course_schedules:
-                            if section.get("sectionCode") == "LEC" and text_value == info.get("section"):
-                                # Create LectureSection
-                                parsed_start_time = parse_time(schedule.get("startTime", ""))
-                                parsed_end_time   = parse_time(schedule.get("endTime", ""))
-                                parsed_start_date = parse_date(schedule.get("startDate", ""))
-                                parsed_end_date   = parse_date(schedule.get("endDate", ""))
+                            lecture_section, lec_created = LectureSection.objects.update_or_create(
+                                course=course_obj,
+                                section_code=section_code,
+                                defaults={
+                                    # "start_time": schedule.get("startTime", ""),
+                                    "start_date": parsed_start_date,
+                                    # "end_time": schedule.get("endTime", ""),
+                                    "end_date": parsed_end_date,
+                                    # "days": schedule.get("days", ""),
+                                    "schedule": schedule,
+                                    "campus": schedule[0].get("campus", ""),
+                                    "class_type": section.get("classType", ""),
+                                    "professor": first_instructor.get("name", "Unknown"),
+                                    "associated_class": associated_class,
+                                    "title": section_title or "Untitled",
+                                    "number": info.get("number", "000"),
+                                    "delivery_method": section_details.get("deliveryMethod", "")
+                                },
+                            )
+                            logger.info(f"LectureSection created: {lecture_section}")
+                        else:
+                            # Check if the section is non-lecture (Lab, Tutorial, etc.)
+                            if section.get("sectionCode") in ["LAB", "TUT", "SEM"]:
+                                # Only create NonLectureSection if it is a recognized non-lecture section type
+                                try:
+                                    logger.info(f"Creating NonLectureSection for section {section_code}")
 
-                                lecture_section, lec_created = LectureSection.objects.update_or_create(
-                                    course=course_obj,
-                                    section_code=section_code,
-                                    defaults={
-                                        "start_time": schedule.get("startTime", ""),
-                                        "start_date": parsed_start_date,
-                                        "end_time": schedule.get("endTime", ""),
-                                        "end_date": parsed_end_date,
-                                        "days": schedule.get("days", ""),
-                                        "campus": schedule.get("campus", ""),
-                                        "class_type": section.get("classType", ""),
-                                        "professor": first_instructor.get("name", "Unknown"),
-                                        "associated_class": associated_class,
-                                        "title": section_title or "Untitled",
-                                        "number": info.get("number", "000"),
-                                    },
-                                )
-                                logger.info(f"LectureSection created: {lecture_section}")
+                                    instructor = first_instructor.get("name", "Unknown")
+
+                                    corresponding_lecture_section = (LectureSection.
+                                                                     objects.get(professor=instructor,
+                                                                                 title=section_title))
+
+                                    NonLectureSection.objects.update_or_create(
+                                        lecture_section=corresponding_lecture_section,
+                                        section_code=section_code,
+                                        defaults={
+                                            # "start_time": parse_time(schedule.get("startTime", "")),
+                                            "start_date": parse_date(schedule[0].get("startDate", "")),
+                                            # "end_time": parse_time(schedule.get("endTime", "")),
+                                            "end_date": parse_date(schedule[0].get("endDate", "")),
+                                            # "days": schedule.get("days", ""),
+                                            "campus": schedule[0].get("campus", ""),
+                                            "schedule": schedule,
+                                            "class_type": section.get("classType", ""),
+                                            "professor": instructor,
+                                            "title": section_title,
+                                            "associated_class": associated_class,
+                                            "number": info.get("number")
+                                        }
+                                    )
+                                    logger.info(
+                                        f"NonLectureSection created: {section_code} for {corresponding_lecture_section}")
+                                except ObjectDoesNotExist:
+                                    logger.error(
+                                        f"LectureSection with associatedClass {associated_class} not found for section {section_code}")
                             else:
-                                # Check if the section is non-lecture (Lab, Tutorial, etc.)
-                                if section.get("sectionCode") in ["LAB", "TUT", "SEM"]:
-                                    # Only create NonLectureSection if it is a recognized non-lecture section type
-                                    try:
-                                        logger.info(f"Creating NonLectureSection for section {section_code}")
-                                        NonLectureSection.objects.update_or_create(
-                                            lecture_section=lecture_section,  # Associate with LectureSection if needed
-                                            section_code=section_code,
-                                            associated_class=associated_class,
-                                            defaults={
-                                                "start_time": parse_time(schedule.get("startTime", "")),
-                                                "start_date": parse_date(schedule.get("startDate", "")),
-                                                "end_time": parse_time(schedule.get("endTime", "")),
-                                                "end_date": parse_date(schedule.get("endDate", "")),
-                                                "days": schedule.get("days", ""),
-                                                "campus": schedule.get("campus", ""),
-                                                "class_type": section.get("classType", ""),
-                                                "professor": first_instructor.get("name", "Unknown"),
-                                                "title": section_title,
-                                                "associated_class": associated_class,
-                                                "number": info.get("number")
-                                            }
-                                        )
-                                        logger.info(f"NonLectureSection created: {section_code} for {lecture_section}")
-                                    except ObjectDoesNotExist:
-                                        logger.error(f"LectureSection with associatedClass {associated_class} not found for section {section_code}")
-                                else:
-                                    logger.info(f"Skipping section {section_code}, no non-lecture component.")
+                                logger.info(f"Skipping section {section_code}, no non-lecture component.")
 
             except requests.exceptions.RequestException as err:
                 logger.error(f"Could not sync courses for {department}: {err}")
 
         logger.info("Course sync cron job completed.")
-
 
     def get_departments(self):
         return ['cmpt']  # Update this list with all relevant departments
