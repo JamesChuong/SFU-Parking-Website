@@ -29,13 +29,11 @@ function App() {
 
                 <Route path='/dashboard' element={
                     <ProtectedRoute isLoggedIn={isAuthenticated} children={<Dashboard />}/>
-                }
-                />
+                } />
 
                 <Route path='/test' element={
                     <ProtectedRoute isLoggedIn={isAuthenticated} children={<Test />}/>
-                }
-                />
+                } />
 
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />

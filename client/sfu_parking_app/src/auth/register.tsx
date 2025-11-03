@@ -108,7 +108,8 @@ function RegistrationPage() {
                     <div className="flex flex-col w-full items-center justify-center py-5">
 
                         <button className="rounded-[5px] bg-gray-400 shadow-[2px]
-                        text-black border border-black w-70" type="submit"> Sign Up
+                        text-black border border-black w-70 hover:bg-grey-800 hover:border-transparent"
+                                type="submit"> Sign Up
                         </button>
 
                     </div>

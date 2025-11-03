@@ -71,6 +71,7 @@ class UserView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    @permission_classes([IsAuthenticated])
     def put(self, request):
 
         try:
