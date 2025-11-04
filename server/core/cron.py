@@ -43,12 +43,6 @@ class SyncCoursesCronJob(CronJobBase):
                         title=course.get("title", "Untitled Course"),
                         department=department,
                         course_number=course_number,
-                        # defaults={
-                        #     "description": info.get("description", ""),
-                        #     "term": info.get("term", ""),
-                        #     "delivery_method": info.get("deliveryMethod", ""),
-                        #     "section_name": info.get("section")
-                        # }
                     )
 
                     sections_url = f"https://www.sfu.ca/bin/wcm/course-outlines?{current_year}/{current_term}/{department}/{course_number}"
@@ -58,7 +52,7 @@ class SyncCoursesCronJob(CronJobBase):
 
                     # Step 1: Create or update the course first
                     for section in sections:
-                        section_code = section.get("value")
+                        section_code = section.get("text")
                         associated_class = section.get("associatedClass")
                         section_title = section.get("title")
                         text_value = section.get("text")
@@ -74,27 +68,36 @@ class SyncCoursesCronJob(CronJobBase):
 
                         info = section_details.get("info", {})
                         schedule = section_details.get("courseSchedule", [])
+
+                        if schedule:
+
+                            campus = schedule[0].get("campus", "")
+                            start_date = parse_date(schedule[0].get("startDate", ""))
+                            end_date = parse_date(schedule[0].get("endDate", ""))
+
+                        else:
+
+                            campus = None
+                            start_date = None
+                            end_date = None
+
                         first_instructor = section_details.get("instructor", [{}])[
                             0]  # Get first instructor if available
 
-                        if section.get("sectionCode") == "LEC" and text_value == info.get("section"):
+                        if section.get("sectionCode") in ["LEC", "IND"] and text_value == info.get("section"):
                             # Create LectureSection
-                            # parsed_start_time = parse_time(schedule.get("startTime", ""))
-                            # parsed_end_time   = parse_time(schedule.get("endTime", ""))
-                            parsed_start_date = parse_date(schedule[0].get("startDate", ""))
-                            parsed_end_date = parse_date(schedule[0].get("endDate", ""))
 
                             lecture_section, lec_created = LectureSection.objects.update_or_create(
                                 course=course_obj,
                                 section_code=section_code,
                                 defaults={
                                     # "start_time": schedule.get("startTime", ""),
-                                    "start_date": parsed_start_date,
+                                    "start_date": start_date,
                                     # "end_time": schedule.get("endTime", ""),
-                                    "end_date": parsed_end_date,
+                                    "end_date": end_date,
                                     # "days": schedule.get("days", ""),
                                     "schedule": schedule,
-                                    "campus": schedule[0].get("campus", ""),
+                                    "campus": campus,
                                     "class_type": section.get("classType", ""),
                                     "professor": first_instructor.get("name", "Unknown"),
                                     "associated_class": associated_class,
@@ -122,11 +125,11 @@ class SyncCoursesCronJob(CronJobBase):
                                         section_code=section_code,
                                         defaults={
                                             # "start_time": parse_time(schedule.get("startTime", "")),
-                                            "start_date": parse_date(schedule[0].get("startDate", "")),
+                                            "start_date": start_date,
                                             # "end_time": parse_time(schedule.get("endTime", "")),
-                                            "end_date": parse_date(schedule[0].get("endDate", "")),
+                                            "end_date": end_date,
                                             # "days": schedule.get("days", ""),
-                                            "campus": schedule[0].get("campus", ""),
+                                            "campus": campus,
                                             "schedule": schedule,
                                             "class_type": section.get("classType", ""),
                                             "professor": instructor,
