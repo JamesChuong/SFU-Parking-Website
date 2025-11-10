@@ -22,7 +22,8 @@ const authenticationSlice = createSlice({
             sessionStorage.setItem("access_token", action.payload.access_token);
             sessionStorage.setItem("refresh_token", action.payload.refresh_token);
 
-            state.token = action.payload;   // payload contains the token
+            state.token = action.payload.access_token;   // payload contains the token
+            state.refresh_token = action.payload.refresh_token
             state.isAuthenticated = true;
         },
         remove_token: (state) => {

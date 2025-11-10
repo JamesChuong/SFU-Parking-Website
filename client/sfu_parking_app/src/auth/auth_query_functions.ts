@@ -43,7 +43,7 @@ async function loginUser(request: LoginData) {
 
 
 async function logoutUser(request: LogoutData) {
-    const response = await axios_config.post("/api/logout/");
+    const response = await axios_config.post("/api/logout/", request);
 
     if (response.status != 205){
         throw Error(response.data)

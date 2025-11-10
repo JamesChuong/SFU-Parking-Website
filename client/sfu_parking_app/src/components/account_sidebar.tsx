@@ -3,14 +3,31 @@ import type {AppDispatch, RootState} from "../redux_store/store.ts";
 import {remove_token} from "../redux_store/redux.ts";
 import type {LogoutData} from "../auth/auth_query_functions.ts";
 import {logoutUser} from "../auth/auth_query_functions.ts";
+import {useNavigate} from "react-router";
+import {useEffect} from "react";
 
+interface SideBarProps{
+    open: boolean
+    username: string
+}
 
-function AccountSideBar(){
+function AccountSideBar(props: SideBarProps){
 
-    const dispatch: AppDispatch = useDispatch()
-    const { refresh_token } = useSelector((state: RootState) => state.authentication);
+    const navigate = useNavigate();
 
-    function logout(){
+    const dispatch: AppDispatch = useDispatch();
+    const { refresh_token, isAuthenticated } = useSelector((state: RootState) => state.authentication);
+
+    useEffect(() => {
+
+        if (!isAuthenticated){
+            navigate('/');
+            window.location.reload();
+        }
+
+    }, [isAuthenticated, navigate]);
+
+    async function logout() {
 
         try {
 
@@ -20,13 +37,14 @@ function AccountSideBar(){
 
             };
 
-            logoutUser(request);
+            const response = await logoutUser(request);
 
-            dispatch(remove_token);
+            dispatch(remove_token());
 
-        }
+            navigate('/');
+            window.location.reload();
 
-        catch (err){
+        } catch (err) {
             console.log(err)
         }
 
@@ -34,10 +52,29 @@ function AccountSideBar(){
 
     return (
         <>
-            <p> Text </p>
+            <div>
+
+                <div
+                    className={`fixed top-0 right-0 h-full w-64 bg-gray-800 text-white p-4 transform transition-transform duration-300 ${
+                      props.open ? "translate-x-0" : "translate-x-full"
+                    }`}
+                >
+                    <h2 className="text-xl font-semibold mb-4">{props.username}</h2>
+                    <ul>
+                        <li className="mb-2">Profile</li>
+                        <li className="mb-2">Settings</li>
+                        <li className="mb-2">
+                            <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                                Sign Out
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </>
     )
 
 }
 
-export default AccountSideBar
+export {AccountSideBar}
+export type {SideBarProps}
