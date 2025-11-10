@@ -45,8 +45,8 @@ function LoginPage() {
 
         try{
 
-            const access_token: string = await loginUser(request);
-            dispatch(set_token(access_token))
+            const response = await loginUser(request);
+            dispatch(set_token(response))
 
         } catch (err) {
             setLoginError(err)
