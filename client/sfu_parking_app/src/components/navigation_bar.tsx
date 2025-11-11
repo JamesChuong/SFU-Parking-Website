@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {AccountSideBar} from "./account_sidebar.tsx";
 
 interface NavBarProps{
@@ -21,8 +21,18 @@ function NavigationBar(props: NavBarProps){
 
                 <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
 
-                    <div className="relative flex h-16 flex-row justify-evenly">
+                    <div className="relative flex h-16 flex-row justify-between">
+
+                        <div className="relative flex h-16 flex-row justify-center">
+                            <div className="flex space-x-4 p-2">
+                                <div className="flex items-center justify-center text-center text-white font-bold">
+                                    <h1> SFU Parking App </h1>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="relative flex flex-row justify-center">
+
                             <div className="flex space-x-4 p-2">
 
                                 <a href="/dashboard" aria-current="page"
@@ -30,12 +40,12 @@ function NavigationBar(props: NavBarProps){
                                     Dashboard
                                 </a>
 
-                                <a href="#"
+                                <a href="/test"
                                    className="flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5">
                                     Find Matches
                                 </a>
 
-                                <a href="#"
+                                <a href="/test"
                                    className="flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5">
                                     Schedule
                                 </a>
@@ -51,7 +61,7 @@ function NavigationBar(props: NavBarProps){
                                 <div className="flex space-x-4 p-2">
 
                                     <button type="button"
-                                            className="relative rounded-full p-1 text-gray-400 hover:text-white focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500">
+                                            className="relative rounded-full p-1 text-gray-400 hover:text-white">
                                         <span className="absolute -inset-1.5"></span>
                                         <span className="sr-only">View notifications</span>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -62,8 +72,8 @@ function NavigationBar(props: NavBarProps){
                                         </svg>
                                     </button>
 
-                                    <button type="button"
-                                            className="relative flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium rounded-md p-1 text-gray-400 hover:text-white focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500 text-white"
+                                    <button type="button" id="username"
+                                            className="relative flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium rounded-md p-1 text-gray-400 hover:text-white hover:bg-white/5 text-white"
                                             onClick={openSideBar}>
                                         {props.username}
                                     </button>

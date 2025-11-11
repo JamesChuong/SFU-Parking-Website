@@ -5,12 +5,14 @@ const refresh_token = sessionStorage.getItem("refresh_token");
 interface authenticationState {
     token: string | null,
     refresh_token: string | null,
+    username: string | null,
     isAuthenticated: boolean,
 }
 
 let initialState: authenticationState = {
     token: token,
     refresh_token: refresh_token,
+    username: null,
     isAuthenticated: !!token,
 }
 
@@ -23,7 +25,8 @@ const authenticationSlice = createSlice({
             sessionStorage.setItem("refresh_token", action.payload.refresh_token);
 
             state.token = action.payload.access_token;   // payload contains the token
-            state.refresh_token = action.payload.refresh_token
+            state.refresh_token = action.payload.refresh_token;
+            state.username = action.payload.username;
             state.isAuthenticated = true;
         },
         remove_token: (state) => {
@@ -31,6 +34,7 @@ const authenticationSlice = createSlice({
             sessionStorage.removeItem("refresh_token");
             state.token = null;
             state.refresh_token = null;
+            state.username = null;
             state.isAuthenticated = false;
         },
     }
