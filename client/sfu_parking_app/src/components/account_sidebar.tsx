@@ -41,9 +41,6 @@ function AccountSideBar(props: SideBarProps){
 
             dispatch(remove_token());
 
-            navigate('/');
-            window.location.reload();
-
         } catch (err) {
             console.log(err)
         }
