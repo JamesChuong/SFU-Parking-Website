@@ -61,11 +61,19 @@ function AccountSideBar(props: SideBarProps){
                 >
                     <h2 className="text-xl font-semibold mb-4">{props.username}</h2>
                     <ul>
-                        <li className="mb-2">Profile</li>
-                        <li className="mb-2">Settings</li>
                         <li className="mb-2">
                             <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
-                                Sign Out
+                                Profile
+                            </button>
+                        </li>
+                        <li className="mb-2">
+                            <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                            Settings
+                            </button>
+                        </li>
+                        <li className="mb-2">
+                            <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                            Sign Out
                             </button>
                         </li>
                     </ul>
