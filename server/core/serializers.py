@@ -19,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'Courses']
+        fields = ['id', 'username', 'email', 'password', 'courses']
         # Password length is set to 128 characters per OWASP
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-length
         extra_kwargs = {
@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        user = User.objects.create_user(email=validated_data['email'], username=validated_data['username']
-                                        , password=validated_data['password'])
+        user = User.objects.create_user(email=validated_data['email'], username=validated_data['username'],
+                                        password=validated_data['password'])
         user.save()
         return user

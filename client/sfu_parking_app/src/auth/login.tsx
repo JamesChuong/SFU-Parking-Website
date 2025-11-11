@@ -45,8 +45,9 @@ function LoginPage() {
 
         try{
 
-            const access_token: string = await loginUser(request);
-            dispatch(set_token(access_token))
+            const response = await loginUser(request);
+            response["username"] = username;
+            dispatch(set_token(response));
 
         } catch (err) {
             setLoginError(err)
@@ -88,6 +89,14 @@ function LoginPage() {
                         <button className="rounded-[5px] bg-gray-400 shadow-[2px]
                         text-black border border-black w-70 hover:bg-grey-800 hover:border-transparent" type="submit"> Sign In
                         </button>
+
+                    </div>
+
+                    <div className="flex items-center justify-center text-center text-[15px]">
+
+                        <p>
+                            Don't have an account? Register <a href="/register" className="text-blue-200 hover:text-blue-400"> here </a>
+                        </p>
 
                     </div>
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 // @ts-ignore
-import {store} from "./redux_store/store.ts";
+import {store} from "./redux_store/store";
 
 const axios_config = axios.create({
   baseURL: 'http://localhost:8000',
@@ -8,7 +8,7 @@ const axios_config = axios.create({
 
 });
 
-// axios_config.defaults.headers.common['Authorization'] = useSelector((state: AuthState) => state.authentication.token);
+// axios_config.defaults.headers.common['Authorization'] = token;
 
 axios_config.interceptors.request.use(config => {
     const token = store.getState().authentication.token

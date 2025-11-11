@@ -15,7 +15,6 @@ function App() {
     const { isAuthenticated } = useSelector(
         (state: RootState) => state.authentication
     );
-
     return (
         <>
 

@@ -97,7 +97,7 @@ class UserView(APIView):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def logout(self, request):
+def logout(request):
     try:
         refresh_token = request.data["refresh_token"]
         refresh_token = RefreshToken(refresh_token)

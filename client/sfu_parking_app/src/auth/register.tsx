@@ -43,9 +43,9 @@ function RegistrationPage() {
                 password: password
             };
 
-            const token: string = await loginUser(login_data);
+            const response = await loginUser(login_data);
 
-            dispatch(set_token(token));
+            dispatch(set_token(response));
 
             setRegistrationError("");
 
