@@ -152,7 +152,7 @@ class UserCourseView(APIView):
             # Get the user's courses by username
 
             user = get_object_or_404(User, username=username)
-            existing_courses = user.Courses.all()
+            existing_courses = user.courses.all()
 
             # Check for time conflicts using the helper function
             conflicts = check_time_conflicts(new_course, existing_courses)
@@ -165,7 +165,7 @@ class UserCourseView(APIView):
                 }, status=status.HTTP_409_CONFLICT)
 
             # If no conflicts, add the course to the user's schedule
-            user.Courses.add(new_course)
+            user.courses.add(new_course)
             user.save()
 
             return Response({"success": "Course added successfully"}, status=status.HTTP_200_OK)
@@ -255,7 +255,7 @@ class UserAllCoursesView(APIView):
         try:
 
             user = get_object_or_404(User, username=username)
-            courses = user.Courses.all()
+            courses = user.courses.all()
 
             return Response(CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK)
 
@@ -292,7 +292,7 @@ def fetch_all_courses(request):
 #         username = request.query_params.get('username')
 #         try:
 #             user = User.objects.get(username=username)
-#             courses = user.Courses.all()
+#             courses = user.courses.all()
 #             serializer = CourseSerializer(courses, many=True)
 #             return Response(serializer.data, status=status.HTTP_200_OK)
 #         except User.DoesNotExist:

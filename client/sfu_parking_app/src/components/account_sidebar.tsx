@@ -22,7 +22,7 @@ function AccountSideBar(props: SideBarProps){
 
         if (!isAuthenticated){
             navigate('/');
-            window.location.reload();
+            // window.location.reload();
         }
 
     }, [isAuthenticated, navigate]);
@@ -59,12 +59,12 @@ function AccountSideBar(props: SideBarProps){
                     <h2 className="text-xl font-semibold mb-4">{props.username}</h2>
                     <ul>
                         <li className="mb-2">
-                            <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                            <button className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
                                 Profile
                             </button>
                         </li>
                         <li className="mb-2">
-                            <button onClick={logout} className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                            <button className="w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
                             Settings
                             </button>
                         </li>

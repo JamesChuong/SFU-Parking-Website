@@ -1,14 +1,25 @@
 import {registerUser, loginUser} from "./auth_query_functions.ts";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import type {RegistrationData, LoginData} from "./auth_query_functions.ts";
-import {useDispatch} from "react-redux";
-import type {AppDispatch} from "../redux_store/store.ts";
+import {useDispatch, useSelector} from "react-redux";
+import type {AppDispatch, RootState} from "../redux_store/store.ts";
 import {set_token} from "../redux_store/redux.ts";
+import {useNavigate} from "react-router";
+
 function RegistrationPage() {
 
     const [registrationError, setRegistrationError] = useState("");
     const dispatch: AppDispatch = useDispatch();
+    const { isAuthenticated } = useSelector((state: RootState) => state.authentication);
+    const navigate = useNavigate();
 
+    useEffect(() => {
+        if (isAuthenticated) {
+
+            navigate("/dashboard", { replace: true });
+
+        }
+    }, [isAuthenticated, navigate]);
     async function registerAccount(e: React.FormEvent<HTMLFormElement>) {
 
         e.preventDefault();
@@ -44,7 +55,7 @@ function RegistrationPage() {
             };
 
             const response = await loginUser(login_data);
-
+            response["username"] = username;
             dispatch(set_token(response));
 
             setRegistrationError("");

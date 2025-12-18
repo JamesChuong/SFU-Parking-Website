@@ -15,7 +15,7 @@ class CourseSerializer(serializers.ModelSerializer):
 # extra_kwargs is for extra keyword arguments on 'password' to make it 128 characters
 # https://www.django-rest-framework.org/api-guide/serializers/#additional-keyword-arguments
 class UserSerializer(serializers.ModelSerializer):
-    Courses = CourseSerializer(many=True, read_only=True)
+    courses = CourseSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
