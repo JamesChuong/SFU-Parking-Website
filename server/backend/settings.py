@@ -26,19 +26,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 # This uses an environment variable. Learn how to set it up using the README installation.
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-TRANSLINK_API_KEY = os.getenv('TRANSLINK_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('TRANSIT_ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
 
 
 # Application definition
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", 'http://127.0.0.1:3000']
+CORS_ALLOWED_ORIGINS = [ALLOWED_HOSTS]
 
 # CORS_ALLOW_HEADERS = (
 #     "accept",
@@ -49,7 +48,7 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:3000", 'http://127.0.0.1:3000']
 #     "x-requested-with",
 # )
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000",]
+CSRF_TRUSTED_ORIGINS = [ALLOWED_HOSTS]
 
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CSRF_COOKIE_SAMESITE = 'Lax'
@@ -122,7 +121,7 @@ SIMPLE_JWT = {
      'BLACKLIST_AFTER_ROTATION': True
 }
 
-ROOT_URLCONF = "backend.urls"
+ROOT_URLCONF = "server.urls"
 
 TEMPLATES = [
     {
@@ -140,17 +139,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "backend.wsgi.application"
+WSGI_APPLICATION = "server.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-db_pw = os.getenv("TRANSIT_DB_PASSWORD")
-db_name = os.getenv("TRANSIT_DB_NAME")
-db_user = os.getenv("TRANSIT_DB_USER")
-db_host = os.getenv("TRANSIT_DB_HOST")
-db_port = os.getenv("TRANSIT_DB_PORT")
+db_pw = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_user = os.getenv("DB_USER")
+db_host = os.getenv("DB_HOST")
+db_port = os.getenv("DB_PORT")
 
 DATABASES = {
     "default": {
@@ -179,14 +178,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Email Settings
 
-EMAIL_HOST = os.getenv("TRANSIT_EMAIL_HOST", "")
-EMAIL_PORT = int(os.getenv("TRANSIT_EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("TRANSIT_EMAIL_USE_TLS", "true") == "true"
-EMAIL_USE_SSL = not os.getenv("TRANSIT_EMAIL_USE_SSL", "false") == "false"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true") == "true"
+EMAIL_USE_SSL = not os.getenv("EMAIL_USE_SSL", "false") == "false"
 
-EMAIL_HOST_USER = os.getenv("TRANSIT_EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("TRANSIT_EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.getenv("TRANSIT_DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 
 # Internationalization
