@@ -3,7 +3,7 @@ import axios from "axios";
 import {store} from "../redux_store/store.ts";
 
 const api_service = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL:  '/api',
   withCredentials: true
 
 });

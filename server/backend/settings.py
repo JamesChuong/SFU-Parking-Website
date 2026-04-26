@@ -48,7 +48,9 @@ CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
 #     "x-requested-with",
 # )
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+]
 
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CSRF_COOKIE_SAMESITE = 'Lax'

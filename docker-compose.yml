@@ -1,17 +1,26 @@
-# Docker containers for the Django server, Redis, Celery, and MySQL database
+# Docker containers for the React frontend, Django server, Redis, Celery, and MySQL database
 
 services:
 
+  client:
+    build:
+      context: ./client
+    container_name: react_nginx
+    ports:
+      - "80:8080"
+    depends_on:
+      - django
+
   django:
 
-    container_name: transit_server
+    container_name: django_server
 
     build:
-      context: ./backend
+      context: ./server
 
     volumes:
-      - transit_server_data:/data
-      - ./backend:/usr/src/backend
+      - server_data:/data
+      - ./server:/usr/src/server
 
     environment:
       DJANGO_SETTINGS_MODULE: backend.settings
@@ -68,7 +77,7 @@ services:
     command: celery -A backend worker -l info
 
     volumes:
-      - ./backend:/usr/src/backend
+      - ./server:/usr/src/server
       - server_data:/data
 
     depends_on:
@@ -79,12 +88,12 @@ services:
   celery-beat: # Celery Task Scheduler
 
     build:
-      context: ./backend
+      context: ./server
 
     command: celery -A backend beat -l info
 
     volumes:
-      - ./backend:/usr/src/backend
+      - ./server:/usr/src/server
       - server_data:/data
 
     environment:
@@ -92,11 +101,11 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DJANGO_SETTINGS_MODULE: backend.settings
-      TRANSIT_DB_HOST: mysql
-      TRANSIT_DB_PORT: 3306
-      TRANSIT_DB_NAME: ${DB_NAME}
-      TRANSIT_DB_PASSWORD: ${DB_PASSWORD}
-      TRANSIT_DB_USER: ${DB_USER}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER}
 
     depends_on:
       - django
@@ -105,7 +114,7 @@ services:
 
   mysql:
 
-    container_name: transit_server_mysql_db
+    container_name: mysql_db
     platform: linux/x86_64
     image: mysql:8.0
     environment:
