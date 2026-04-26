@@ -1,16 +1,16 @@
 import axios from "axios";
 // @ts-ignore
-import {store} from "./redux_store/store";
+import {store} from "../redux_store/store.ts";
 
-const axios_config = axios.create({
+const api_service = axios.create({
   baseURL: 'http://localhost:8000',
   withCredentials: true
 
 });
 
-// axios_config.defaults.headers.common['Authorization'] = token;
+// api_service.defaults.headers.common['Authorization'] = token;
 
-axios_config.interceptors.request.use(config => {
+api_service.interceptors.request.use(config => {
     const token = store.getState().authentication.token
     if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
@@ -20,6 +20,6 @@ axios_config.interceptors.request.use(config => {
     return Promise.reject(error);
 });
 
-axios_config.defaults.headers.common['Content-Type'] = 'application/json'
+api_service.defaults.headers.common['Content-Type'] = 'application/json'
 
-export default axios_config
+export default api_service

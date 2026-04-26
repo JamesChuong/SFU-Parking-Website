@@ -1,6 +1,6 @@
-import {NavigationBar} from "../components/navigation_bar.tsx";
+import {NavigationBar} from "@/shared/navigation_bar.tsx";
 import {useSelector} from "react-redux";
-import type {RootState} from "../redux_store/store.ts";
+import type {RootState} from "@/redux_store/store.ts";
 
 function Dashboard() {
 
@@ -9,7 +9,7 @@ function Dashboard() {
     return (
 
         <>
-            <NavigationBar username={username}/>
+            <NavigationBar username={username || ""}/>
 
             <p> Dashboard </p>
 

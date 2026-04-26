@@ -1,8 +1,8 @@
 import {useDispatch, useSelector} from "react-redux";
 import type {AppDispatch, RootState} from "../redux_store/store.ts";
 import {remove_token} from "../redux_store/redux.ts";
-import type {LogoutData} from "../auth/auth_query_functions.ts";
-import {logoutUser} from "../auth/auth_query_functions.ts";
+import type {LogoutData} from "@/interfaces/request_data.ts";
+import {authService} from "@/services/auth_service.ts";
 import {useNavigate} from "react-router";
 import {useEffect} from "react";
 
@@ -29,15 +29,15 @@ function AccountSideBar(props: SideBarProps){
 
     async function logout() {
 
+        if (!refresh_token) return
+
         try {
 
             const request: LogoutData = {
-
                 refresh_token: refresh_token
-
             };
 
-            const response = await logoutUser(request);
+            await authService.logoutUser(request);
 
             dispatch(remove_token());
 

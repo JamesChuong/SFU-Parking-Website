@@ -1,13 +1,15 @@
-import React, {useEffect} from "react";
-import type {LoginData} from "./auth_query_functions.ts";
-import {loginUser} from "./auth_query_functions.ts";
-import {useState} from "react";
+import React, {useEffect, useState} from "react";
+import type {LoginData} from "@/interfaces/request_data.ts";
+import {authService} from "@/services/auth_service.ts";
 import {useDispatch, useSelector} from "react-redux";
-import type {AppDispatch} from "../redux_store/store.ts";
-import {set_token} from "../redux_store/redux.ts";
+import type {AppDispatch} from "@/redux_store/store.ts";
+import {set_token} from "@/redux_store/redux.ts";
 import {useNavigate} from "react-router";
 import {useLocation} from "react-router-dom";
-import type {RootState} from "../redux_store/store.ts";
+import type {RootState} from "@/redux_store/store.ts";
+import type {AuthenticationState} from "@/interfaces/state_data.ts";
+
+
 function LoginPage() {
 
     const [loginError, setLoginError] = useState("");
@@ -33,10 +35,10 @@ function LoginPage() {
 
         e.preventDefault();
 
-        const form_data: FormData = new FormData(e.currentTarget);
+        const formData: FormData = new FormData(e.currentTarget);
 
-        const username: string = form_data.get("username") as string;
-        const password: string = form_data.get("password") as string;
+        const username: string = formData.get("username") as string;
+        const password: string = formData.get("password") as string;
 
         const request: LoginData = {
             username: username,
@@ -45,12 +47,19 @@ function LoginPage() {
 
         try{
 
-            const response = await loginUser(request);
-            response["username"] = username;
-            dispatch(set_token(response));
+            const response = await authService.loginUser(request);
 
-        } catch (err) {
-            setLoginError(err)
+            const newAuthenticationState : AuthenticationState = {
+                token: response.access_token,
+                refresh_token: response.refresh_token,
+                username: username,
+                isAuthenticated: true
+            }
+
+            dispatch(set_token(newAuthenticationState));
+
+        } catch (err: any) {
+            setLoginError(err.message)
         }
     }
 
