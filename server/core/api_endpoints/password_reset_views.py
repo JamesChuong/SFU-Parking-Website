@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
-from core.model_serializers.password_reset_serializers import *
+from core.serializers.password_reset_serializers import *
 
 
 @api_view(["POST"])

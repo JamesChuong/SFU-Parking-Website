@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.models import Course, LectureSection, NonLectureSection, Department
-from core.serializers import CourseSerializer
+from core.serializers.course_serializers import CourseSerializer
 from core.utils import check_time_conflicts
 
 
