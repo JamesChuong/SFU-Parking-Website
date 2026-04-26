@@ -1,16 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit'
+import type { AuthenticationState } from "@/interfaces/state_data.ts";
 
 const token = sessionStorage.getItem("access_token");
 const refresh_token = sessionStorage.getItem("refresh_token");
 const username = sessionStorage.getItem("username");
-interface authenticationState {
-    token: string | null,
-    refresh_token: string | null,
-    username: string | null,
-    isAuthenticated: boolean,
-}
 
-let initialState: authenticationState = {
+let initialState: AuthenticationState = {
     token: token,
     refresh_token: refresh_token,
     username: username,
@@ -21,7 +16,7 @@ const authenticationSlice = createSlice({
     name: 'authentication_store',
     initialState,
     reducers: {
-        set_token: (state, action) => {
+        set_token: (state : AuthenticationState, action) => {
             sessionStorage.setItem("access_token", action.payload.access_token);
             sessionStorage.setItem("refresh_token", action.payload.refresh_token);
             sessionStorage.setItem("username", action.payload.username);
@@ -30,7 +25,7 @@ const authenticationSlice = createSlice({
             state.username = action.payload.username;
             state.isAuthenticated = true;
         },
-        remove_token: (state) => {
+        remove_token: (state : AuthenticationState) => {
             sessionStorage.removeItem("access_token");
             sessionStorage.removeItem("refresh_token");
             sessionStorage.removeItem("username");

@@ -1,10 +1,11 @@
-import {registerUser, loginUser} from "./auth_query_functions.ts";
+import {authService} from "@/services/auth_service.ts";
 import React, {useEffect, useState} from "react";
-import type {RegistrationData, LoginData} from "./auth_query_functions.ts";
+import type {RegistrationData, LoginData} from "@/interfaces/request_data.ts";
 import {useDispatch, useSelector} from "react-redux";
-import type {AppDispatch, RootState} from "../redux_store/store.ts";
-import {set_token} from "../redux_store/redux.ts";
+import type {AppDispatch, RootState} from "@/redux_store/store.ts";
+import {set_token} from "@/redux_store/redux.ts";
 import {useNavigate} from "react-router";
+import type {AuthenticationState} from "@/interfaces/state_data.ts";
 
 function RegistrationPage() {
 
@@ -47,16 +48,23 @@ function RegistrationPage() {
 
         try {
 
-            await registerUser(request);
+            await authService.registerUser(request);
 
             const login_data: LoginData = {
                 username: username,
                 password: password
             };
 
-            const response = await loginUser(login_data);
-            response["username"] = username;
-            dispatch(set_token(response));
+            const response = await authService.loginUser(login_data);
+
+            const newAuthenticationState : AuthenticationState = {
+                token: response.access_token,
+                refresh_token: response.refresh_token,
+                username: username,
+                isAuthenticated: true
+            }
+
+            dispatch(set_token(newAuthenticationState));
 
             setRegistrationError("");
 

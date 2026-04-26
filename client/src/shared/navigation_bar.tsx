@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {AccountSideBar} from "./account_sidebar.tsx";
 
 interface NavBarProps{
