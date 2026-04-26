@@ -1,36 +1,12 @@
-from rest_framework import serializers
-from .models import User, Course, LectureSection, NonLectureSection, NewSemesterNotification
-from django.db.models import Q
-
-
-class CourseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Course
-        fields = ["title", "department", "course_number"]
-
-    def create(self, validated_data):
-        course = Course.objects.create(**validated_data)
-        return course
-
-
-class LectureSectionSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
-
-    class Meta:
-        model = LectureSection
-        fields = '__all__'
-
-
-class NonLectureSectionSerializer(serializers.ModelSerializer):
-    lecture_section = LectureSectionSerializer(read_only=True)
-
-    class Meta:
-        model = NonLectureSection
-        fields = '__all__'
-
-
 # extra_kwargs is for extra keyword arguments on 'password' to make it 128 characters
 # https://www.django-rest-framework.org/api-guide/serializers/#additional-keyword-arguments
+from django.db.models import Q
+from rest_framework import serializers
+
+from core.serializers.course_serializers import LectureSectionSerializer, NonLectureSectionSerializer
+from core.models import User
+
+
 class UserSerializer(serializers.ModelSerializer):
     lecture_sections = LectureSectionSerializer(many=True, read_only=True)
     non_lecture_sections = NonLectureSectionSerializer(many=True, read_only=True)
@@ -63,10 +39,3 @@ class UserSerializer(serializers.ModelSerializer):
                                         password=validated_data['password'])
         user.save()
         return user
-
-
-class NewSemesterNotificationSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = NewSemesterNotification
-        fields = '__all__'

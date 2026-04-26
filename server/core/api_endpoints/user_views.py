@@ -1,9 +1,6 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from django.db import IntegrityError, transaction
-from django.forms import model_to_dict
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -12,11 +9,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
 from core.models import User, LectureSection, NonLectureSection, NewSemesterNotification
-from core.serializers import UserSerializer, LectureSectionSerializer, NonLectureSectionSerializer, NewSemesterNotificationSerializer
+from core.serializers.course_serializers import LectureSectionSerializer, NonLectureSectionSerializer
+from core.serializers.notification_serializer import NewSemesterNotificationSerializer
+from core.serializers.user_serializer import UserSerializer
 from core.utils import check_time_conflicts, refresh_courses_if_stale
-from core.model_serializers.registration_verification_code_serializers import *
+from core.serializers.registration_verification_code_serializers import *
 
-from core.model_serializers.registration_verification_code_serializers import \
+from core.serializers.registration_verification_code_serializers import \
     RegistrationVerificationCodeSerializer, RegistrationVerifyOTPSerializer
 
 
