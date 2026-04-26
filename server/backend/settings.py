@@ -37,7 +37,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [ALLOWED_HOSTS]
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
 
 # CORS_ALLOW_HEADERS = (
 #     "accept",
@@ -48,7 +48,7 @@ CORS_ALLOWED_ORIGINS = [ALLOWED_HOSTS]
 #     "x-requested-with",
 # )
 
-CSRF_TRUSTED_ORIGINS = [ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
 
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CSRF_COOKIE_SAMESITE = 'Lax'
@@ -121,7 +121,7 @@ SIMPLE_JWT = {
      'BLACKLIST_AFTER_ROTATION': True
 }
 
-ROOT_URLCONF = "server.urls"
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
