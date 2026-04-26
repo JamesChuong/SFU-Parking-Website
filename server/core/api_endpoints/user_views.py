@@ -16,6 +16,7 @@ from core.serializers import UserSerializer, LectureSectionSerializer, NonLectur
 from core.utils import check_time_conflicts, refresh_courses_if_stale
 from core.model_serializers.registration_verification_code_serializers import *
 
+
 class UserView(APIView):
 
     def get_permissions(self):
@@ -144,7 +145,7 @@ def add_course_to_schedule(request):
 
         with transaction.atomic():
 
-            existing_courses = [course for course in user_courses if course.department == department and
+            existing_courses = [course for course in user_courses if course.department_code == department and
                                 course.number == course_number and
                                 (course.section_code == lecture_section_code or
                                 course.section_code == non_lecture_section_code or "")
@@ -152,12 +153,12 @@ def add_course_to_schedule(request):
 
             if existing_courses:
                 return Response(
-                    {"error": f"{existing_courses[0].department} {existing_courses[0].number} "
+                    {"error": f"{existing_courses[0].department_code} {existing_courses[0].number} "
                               f"{existing_courses[0].section_code} is already in your schedule"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            new_lecture_section = LectureSection.objects.filter(department=department, number=course_number,
+            new_lecture_section = LectureSection.objects.filter(department_code=department, number=course_number,
                                                                 section_code=lecture_section_code).first()
 
             if new_lecture_section:
@@ -178,7 +179,7 @@ def add_course_to_schedule(request):
 
                 if non_lecture_section_code:
 
-                    non_lecture_section = NonLectureSection.objects.filter(department=department, number=course_number,
+                    non_lecture_section = NonLectureSection.objects.filter(department_code=department, number=course_number,
                                                                            section_code=non_lecture_section_code).first()
 
                     conflicts = check_time_conflicts(non_lecture_section, user_courses)
@@ -218,7 +219,7 @@ def remove_course_from_schedule(request):
     with transaction.atomic():
         user = request.user
 
-        lecture_section = LectureSection.objects.filter(department=department, number=course_number,
+        lecture_section = LectureSection.objects.filter(department_code=department, number=course_number,
                                                         section_code=section_code).first()
 
         if lecture_section:
@@ -231,7 +232,7 @@ def remove_course_from_schedule(request):
 
         else:
 
-            non_lecture_section = NonLectureSection.objects.filter(department=department, number=course_number,
+            non_lecture_section = NonLectureSection.objects.filter(department_code=department, number=course_number,
                                                                    section_code=section_code).first()
 
             if non_lecture_section:

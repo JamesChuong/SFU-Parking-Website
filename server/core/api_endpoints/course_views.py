@@ -17,58 +17,13 @@ def get_course(request, department, course_number):
     try:
 
         # Check if the course exists in our database of all courses
-        course = get_object_or_404(Course, title=department, number=course_number)
-        course = get_object_or_404(Course, department=department, course_number=course_number)
+        course = get_object_or_404(Course, department_code=department, course_number=course_number)
 
         return Response(CourseSerializer(course).data, status=status.HTTP_200_OK)
 
     except Http404 as e:
 
         return Response({"error": "Course does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-
-# Given a set of course IDs, retrieve the course info associated with each section as a list
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_courses_from_ids(request):
-    course_id_params = request.query_params.get('course_ids', '')
-
-    course_ids = []
-
-    if course_id_params:
-
-        course_ids = [cid for cid in course_id_params.split(',') if cid.isdigit()]
-
-    courses = Course.objects.filter(id__in=course_ids).values()
-    if not courses:
-        return Response({"error": "Courses could not be retrieved"}, status=status.HTTP_400_BAD_REQUEST)
-
-    lecture_sections_no_lab = LectureSection.objects.filter(course_id__in=course_ids).values()
-
-    titles = [course['title'] for course in courses]
-    section_codes = [course['section_name'] for course in courses]
-    course_numbers = [course['course_number'] for course in courses]
-
-    non_lecture_components = NonLectureSection.objects.filter(number__in=course_numbers,
-                                                              title__in=titles,
-                                                              section_code__in=section_codes).values()
-
-    non_lecture_professors = [component['professor'] for component in non_lecture_components]
-    non_lecture_titles = [component['title'] for component in non_lecture_components]
-    non_lecture_numbers = [component['number'] for component in non_lecture_components]
-
-    lecture_sections_with_lab = LectureSection.objects.filter(professor__in=non_lecture_professors,
-                                                              number__in=non_lecture_numbers,
-                                                              title__in=non_lecture_titles).values()
-
-    lecture_sections = list(
-        {tuple(section.items()) for section in chain(lecture_sections_no_lab, lecture_sections_with_lab)})
-
-    lecture_sections = [dict(section) for section in lecture_sections]
-
-    return Response({"lecture_sections": list(lecture_sections),
-                     "non_lecture_sections": list(non_lecture_components)},
-                    status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -90,13 +45,13 @@ def get_lecture_sections(request, course_id: int):
         # Non-lecture sections which are meant to be taken on their own (e.g, physics labs)
         standalone_non_lecture_sections = NonLectureSection.objects.filter(lecture_section=None, title=course.title)
 
-        lectures = [{"id": ls.id, "department": ls.department, "number": ls.number, "title": ls.title,
+        lectures = [{"id": ls.id, "department_code": ls.department_code, "number": ls.number, "title": ls.title,
                  "section_code": ls.section_code, "professor": ls.professor, "schedule": ls.schedule,
                  "start_date": ls.start_date, "end_date": ls.end_date, "campus": ls.campus}
                 for ls in lecture_sections
                 ]
 
-        non_lectures = [{"id": ls.id, "department": ls.department, "number": ls.number, "title": ls.title,
+        non_lectures = [{"id": ls.id, "department_code": ls.department_code, "number": ls.number, "title": ls.title,
                  "section_code": ls.section_code, "professor": ls.professor, "schedule": ls.schedule,
                  "start_date": ls.start_date, "end_date": ls.end_date, "campus": ls.campus}
                 for ls in standalone_non_lecture_sections
@@ -125,7 +80,7 @@ def get_non_lecture_sections(request, lecture_section_id):
     non_lecture_sections = lecture_section.non_lecture_sections.all()  # Use the new related_name
 
     data = [
-        {"id": nls.id, "department": nls.department, "number": nls.number, "title": nls.title, "section_code": nls.section_code,
+        {"id": nls.id, "department_code": nls.department_code, "number": nls.number, "title": nls.title, "section_code": nls.section_code,
          "professor": nls.professor, "schedule": nls.schedule,
          "start_date": nls.start_date, "end_date": nls.end_date, "campus": nls.campus}
         for nls in non_lecture_sections
@@ -153,7 +108,7 @@ def get_department_courses(request, department_id):
             {
                 "id": course.id,
                 "title": course.title,
-                "department": course.department,
+                "department_code": course.department_code,
                 "course_number": course.course_number
             }
             for course in courses

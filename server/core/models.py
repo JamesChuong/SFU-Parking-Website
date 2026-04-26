@@ -44,15 +44,15 @@ class Course(models.Model):
     DoesNotExist = None
     objects = models.Manager()  # Explicitly adding objects manager
 
-    department_code = models.ForeignKey(Department, related_name="courses", on_delete=models.CASCADE, null=True)
+    department = models.ForeignKey(Department, related_name="courses", on_delete=models.CASCADE, null=True)
 
     title = models.CharField(max_length=100, default='Untitled', db_index=True)
-    department = models.CharField(max_length=100, default='No department')
+    department_code = models.CharField(max_length=100, default='No department')
     course_number = models.CharField(max_length=10, default='000')  # 125, 225, etc.
 
     # The __str method below makes the Django Course model readable for when you do print(course)
     def __str__(self):
-        return f"{self.department} {self.course_number} - {self.title}"
+        return f"{self.department_code} {self.course_number} - {self.title}"
 
     def save(self, *args, **kwargs):
         self.department = self.department
@@ -81,7 +81,7 @@ class LectureSection(models.Model):
     professor = models.CharField(max_length=100, null=True, blank=True)
     associated_class = models.CharField(max_length=50, default=0)
     title = models.CharField(max_length=100, default='Untitled')
-    department = models.CharField(max_length=100, default='No department')
+    department_code = models.CharField(max_length=100, default='No department')
     number = models.CharField(max_length=100, default='000')
     delivery_method = models.CharField(max_length=50, null=True, blank=True)
 
@@ -89,7 +89,7 @@ class LectureSection(models.Model):
         return f"{self.title} - {self.section_code} (Lecture)"
 
     def save(self, *args, **kwargs):
-        self.department = self.department
+        self.department = self.department_code
         super().save(*args, **kwargs)
 
 
@@ -116,14 +116,14 @@ class NonLectureSection(models.Model):
     schedule = models.JSONField(null=True, blank=True)
     campus = models.CharField(max_length=100, null=True, blank=True)
     professor = models.CharField(max_length=100, null=True, blank=True)
-    department = models.CharField(max_length=100, default='No department')
+    department_code = models.CharField(max_length=100, default='No department')
     number = models.CharField(max_length=100, default='000')
 
     def __str__(self):
         return f"{self.title} - {self.section_code} ({self.class_type})"
 
     def save(self, *args, **kwargs):
-        self.department = self.department
+        self.department = self.department_code
         super().save(*args, **kwargs)
 
 

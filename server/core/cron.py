@@ -117,9 +117,9 @@ def process_courses(current_year, current_term, department):
             corresponding_department = Department.objects.get(code=department_code)
 
             course_model, _ = Course.objects.update_or_create(
-                department_code=corresponding_department,
+                department=corresponding_department,
                 title=course.get("title", "Untitled Course"),
-                department=department_code,
+                department_code=department_code,
                 course_number=course_number,
             )
 
@@ -189,7 +189,7 @@ def process_course_sections(current_year, current_term, course, department):
                         "professor": first_instructor.get("name", "Unknown"),
                         "associated_class": associated_class,
                         "title": section_title or "Untitled",
-                        "department": department_code,
+                        "department_code": department_code,
                         "number": info.get("number", "000"),
                         "delivery_method": section_details.get("deliveryMethod", "")
                     },
@@ -226,7 +226,7 @@ def process_course_sections(current_year, current_term, course, department):
                             "professor": instructor,
                             "title": section_title,
                             "associated_class": associated_class,
-                            "department": department_code,
+                            "department_code": department_code,
                             "number": info.get("number")
                         }
                     )
