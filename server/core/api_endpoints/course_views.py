@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from core.models import Course, LectureSection, NonLectureSection, Department
 from core.serializers import CourseSerializer
+from core.utils import check_time_conflicts
 
 
 @api_view(["GET"])
@@ -119,3 +120,17 @@ def get_department_courses(request, department_id):
     except Http404 as e:
 
         return Response({"error": "Department not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def validate_course_schedule(request):
+
+    courses = request.data.get('courses', [])
+
+    try:
+        check_time_conflicts(courses)
+        return Response({"success": "No conflicts detected"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
