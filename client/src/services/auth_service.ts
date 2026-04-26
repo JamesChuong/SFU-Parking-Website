@@ -13,7 +13,7 @@ async function registerUser(request: RegistrationData) {
 
 async function loginUser(request: LoginData) {
 
-    const response = await api_service.post("/token/", request);
+    const response = await api_service.post("/api/token/", request);
 
     if (response.status != 200) {
         throw Error(response.data);
