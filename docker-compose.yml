@@ -1,74 +1,126 @@
-# Docker containers for the Django server and MySQL database
+# Docker containers for the Django server, Redis, Celery, and MySQL database
 
 services:
 
   django:
 
-    container_name: django_server
+    container_name: transit_server
 
     build:
-      context: ./server
+      context: ./backend
 
     volumes:
-      - server_data:/data
+      - transit_server_data:/data
+      - ./backend:/usr/src/backend
 
     environment:
       DJANGO_SETTINGS_MODULE: backend.settings
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: racoon_database
+      DB_NAME: ${DB_NAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_USER: ${DB_USER}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DEBUG: ${DEBUG}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_USE_TLS: $EMAIL_USE_TLS}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+
     depends_on:
+      redis:
+        condition: service_healthy
       mysql:
         condition: service_healthy
+
     ports:
       - 8000:8000
 
-  cron:
+  redis:
 
-    container_name: cron_scheduler
+    image: redis:alpine
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  celery: # Celery Worker Node
+
     build:
       context: ./server
 
     environment:
+      DEBUG: 1
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DJANGO_SETTINGS_MODULE: backend.settings
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: racoon_database
+      DB_NAME: ${DB_NAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_USER: ${DB_USER}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+
+    command: celery -A backend worker -l info
 
     volumes:
+      - ./backend:/usr/src/backend
       - server_data:/data
-    command: >
-      sh -c "python manage.py migrate django_cron && python manage.py runcrons"
+
     depends_on:
       - django
       - mysql
+      - redis
+
+  celery-beat: # Celery Task Scheduler
+
+    build:
+      context: ./backend
+
+    command: celery -A backend beat -l info
+
+    volumes:
+      - ./backend:/usr/src/backend
+      - server_data:/data
+
+    environment:
+      DEBUG: 1
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      DJANGO_SETTINGS_MODULE: backend.settings
+      TRANSIT_DB_HOST: mysql
+      TRANSIT_DB_PORT: 3306
+      TRANSIT_DB_NAME: ${DB_NAME}
+      TRANSIT_DB_PASSWORD: ${DB_PASSWORD}
+      TRANSIT_DB_USER: ${DB_USER}
+
+    depends_on:
+      - django
+      - mysql
+      - redis
 
   mysql:
 
-    container_name: server_mysql_db
+    container_name: transit_server_mysql_db
     platform: linux/x86_64
     image: mysql:8.0
     environment:
-      MYSQL_DATABASE: racoon_database
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+      test: mysqladmin ping -h 127.0.0.1 -u ${DB_USER} --password=$$MYSQL_ROOT_PASSWORD
       start_period: 5s
       interval: 2s
       timeout: 5s
       retries: 20
     ports:
-      - 3307:3306   # Port 3307 is used to prevent conflicts with MySQL running locally
+      - 127.0.0.1:3307:3306 # Localhost
 
 volumes:
 

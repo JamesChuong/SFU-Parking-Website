@@ -95,7 +95,7 @@ function LoginPage() {
                     <div className="flex items-center justify-center text-center text-[15px]">
 
                         <p>
-                            Don't have an account? Register <a href="/register" className="text-blue-200 hover:text-blue-400"> here </a>
+                            Don't have an account? Register <a href="/register" className="text-blue-400 hover:text-blue-600"> here </a>
                         </p>
 
                     </div>
