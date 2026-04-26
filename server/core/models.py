@@ -82,7 +82,7 @@ class LectureSection(models.Model):
     associated_class = models.CharField(max_length=50, default=0)
     title = models.CharField(max_length=100, default='Untitled')
     department_code = models.CharField(max_length=100, default='No department')
-    number = models.CharField(max_length=100, default='000')
+    course_number = models.CharField(max_length=100, default='000')
     delivery_method = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -117,7 +117,7 @@ class NonLectureSection(models.Model):
     campus = models.CharField(max_length=100, null=True, blank=True)
     professor = models.CharField(max_length=100, null=True, blank=True)
     department_code = models.CharField(max_length=100, default='No department')
-    number = models.CharField(max_length=100, default='000')
+    course_number = models.CharField(max_length=100, default='000')
 
     def __str__(self):
         return f"{self.title} - {self.section_code} ({self.class_type})"

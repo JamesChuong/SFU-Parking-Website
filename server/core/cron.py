@@ -190,7 +190,7 @@ def process_course_sections(current_year, current_term, course, department):
                         "associated_class": associated_class,
                         "title": section_title or "Untitled",
                         "department_code": department_code,
-                        "number": info.get("number", "000"),
+                        "course_number": info.get("number", "000"),
                         "delivery_method": section_details.get("deliveryMethod", "")
                     },
                 )
@@ -227,7 +227,7 @@ def process_course_sections(current_year, current_term, course, department):
                             "title": section_title,
                             "associated_class": associated_class,
                             "department_code": department_code,
-                            "number": info.get("number")
+                            "course_number": info.get("number")
                         }
                     )
                     logger.info(

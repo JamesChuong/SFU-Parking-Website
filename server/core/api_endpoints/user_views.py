@@ -16,6 +16,9 @@ from core.serializers import UserSerializer, LectureSectionSerializer, NonLectur
 from core.utils import check_time_conflicts, refresh_courses_if_stale
 from core.model_serializers.registration_verification_code_serializers import *
 
+from core.model_serializers.registration_verification_code_serializers import \
+    RegistrationVerificationCodeSerializer, RegistrationVerifyOTPSerializer
+
 
 class UserView(APIView):
 
@@ -122,91 +125,57 @@ def remove_courses(request):
         return Response({"error": "Could not remove your courses"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# Adds a course (lecture section or non lecture section) to a user's schedule
-# Expects the request body to be a JSON representation of either a lecture section or non lecture section as defined
-# in the models.py
+# Adds a list of courses (lecture section or non lecture section) to a user's schedule
+# Used for bulk adding courses as a single transaction
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def add_course_to_schedule(request):
-    department = request.data["department"]
-    course_number = request.data["course_number"]
-    lecture_section_code = request.data["lecture_section_code"]
-    non_lecture_section_code = request.data.get("non_lecture_section_code", None)
+
+    # List of lecture/non-lecture sections to add to the user's schedule
+    courses = request.data.get("courses", [])
     user = request.user
 
-    # Get the user's courses by username
-    user_courses = list(user.lecture_sections.all())
-    user_courses += list(user.non_lecture_sections.all())
-
-    error_response = None
-
-    # Gracefully catch any errors that could occur
     try:
 
         with transaction.atomic():
 
-            existing_courses = [course for course in user_courses if course.department_code == department and
-                                course.number == course_number and
-                                (course.section_code == lecture_section_code or
-                                course.section_code == non_lecture_section_code or "")
-                                ]
+            for course in courses:
 
-            if existing_courses:
-                return Response(
-                    {"error": f"{existing_courses[0].department_code} {existing_courses[0].number} "
-                              f"{existing_courses[0].section_code} is already in your schedule"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                department = course.get("department_code")
+                course_number = course.get("course_number")
+                section_code = course.get("section_code")
 
-            new_lecture_section = LectureSection.objects.filter(department_code=department, number=course_number,
-                                                                section_code=lecture_section_code).first()
+                check_time_conflicts(courses)
 
-            if new_lecture_section:
+                lecture_section = LectureSection.objects.filter(department_code=department, course_number=course_number,
+                                                                section_code=section_code).first()
 
-                conflicts = check_time_conflicts(new_lecture_section, user_courses)
+                if lecture_section:
+                    user.lecture_sections.add(lecture_section)
 
-                if conflicts:
+                else:
+                    non_lecture_section = NonLectureSection.objects.filter(department_code=department,
+                                                                           course_number=course_number,
+                                                                           section_code=section_code).first()
 
-                    error_response = Response({
-                        "error": "Time conflicts detected",
-                        "section": model_to_dict(new_lecture_section),
-                        "conflicts": conflicts
-                    }, status=status.HTTP_409_CONFLICT)
-
-                    raise Exception
-
-                non_lecture_section = None
-
-                if non_lecture_section_code:
-
-                    non_lecture_section = NonLectureSection.objects.filter(department_code=department, number=course_number,
-                                                                           section_code=non_lecture_section_code).first()
-
-                    conflicts = check_time_conflicts(non_lecture_section, user_courses)
-
-                    if conflicts:
-
-                        error_response = Response({
-                            "error": "Time conflicts detected",
-                            "section": model_to_dict(non_lecture_section),
-                            "conflicts": conflicts
-                        }, status=status.HTTP_409_CONFLICT)
-
-                        raise Exception
-
-                user.lecture_sections.add(new_lecture_section)
-                if non_lecture_section:
-                    user.non_lecture_sections.add(non_lecture_section)
+                    if non_lecture_section:
+                        user.non_lecture_sections.add(non_lecture_section)
 
             user.save()
 
+            return Response({"success": "Courses added to schedule"}, status=status.HTTP_200_OK)
+
+    except IntegrityError:
+
+        return Response({"error": "Could not add courses to schedule"}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Http404:
+
+        return Response({"error": "One or more courses not found"}, status=status.HTTP_404_NOT_FOUND)
+
     except Exception as e:
 
-        if error_response is not None:
-            return error_response
-        return Response({"error": "Could not add course to your schedule"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return Response({"success": "Section added successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -219,7 +188,7 @@ def remove_course_from_schedule(request):
     with transaction.atomic():
         user = request.user
 
-        lecture_section = LectureSection.objects.filter(department_code=department, number=course_number,
+        lecture_section = LectureSection.objects.filter(department_code=department, course_number=course_number,
                                                         section_code=section_code).first()
 
         if lecture_section:
@@ -232,7 +201,7 @@ def remove_course_from_schedule(request):
 
         else:
 
-            non_lecture_section = NonLectureSection.objects.filter(department_code=department, number=course_number,
+            non_lecture_section = NonLectureSection.objects.filter(department_code=department, course_number=course_number,
                                                                    section_code=section_code).first()
 
             if non_lecture_section:

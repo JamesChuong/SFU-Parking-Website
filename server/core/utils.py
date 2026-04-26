@@ -54,25 +54,32 @@ def get_current_term():
     return get_term_from_month(date.today().month)
 
 
-# Returns a hash map that maps days to sections + the exact time block that occur on that day
-def build_day_to_event_map(user_courses):
+from datetime import datetime
+
+
+class CourseTimeConflictException(Exception):
+    pass
+
+
+def to_time(t: str):
+    return datetime.strptime(t, "%H:%M").time()
+
+
+def parse_days(days: str):
+    return [day.strip() for day in days.split(",") if day.strip()]
+
+
+# Helper function for building a map of days to course events for conflict checking
+def build_day_to_event_map(courses):
     day_to_event = {}
 
-    for section in user_courses:
-
-        schedule = section.schedule
-
-        for block in schedule:
-
-            days = [day.strip() for day in block["days"].split(", ")]
-
-            # Store both the section and the time block during that day
-            map_entry = {
-                "section": section,
-                "time_block": block
-            }
-
-            for day in days:
+    for section in courses:
+        for block in section.schedule:
+            for day in parse_days(block["days"]):
+                map_entry = {
+                    "section": section,
+                    "time_block": block,
+                }
 
                 if day not in day_to_event:
                     day_to_event[day] = []
@@ -82,42 +89,49 @@ def build_day_to_event_map(user_courses):
     return day_to_event
 
 
-def to_time(t: str):
-    return datetime.strptime(t, "%H:%M").time()
-
-
 def check_course_conflicts(block1, block2):
-
     start_time1 = to_time(block1["startTime"])
-    start_time2 = to_time(block2["startTime"])
-
     end_time1 = to_time(block1["endTime"])
+
+    start_time2 = to_time(block2["startTime"])
     end_time2 = to_time(block2["endTime"])
 
     return start_time1 < end_time2 and start_time2 < end_time1
 
 
-# Checks a new course's time conflicts with the current user's courses.
-# Uses helper function is_conflicting to check if a schedule conflicts
-def check_time_conflicts(new_course, user_courses):
+def check_time_conflicts(courses: list[dict]):
+    if not courses:
+        return
 
-    if not new_course or not user_courses:
-        return []
+    day_to_event_map = build_day_to_event_map(courses)
+    conflicts = []
 
-    conflicts = set()
-    day_to_event_map = build_day_to_event_map(user_courses)
+    for day, events in day_to_event_map.items():
+        for i in range(len(events)):
+            for j in range(i + 1, len(events)):
+                event1 = events[i]
+                event2 = events[j]
 
-    for block in new_course.schedule:
-        days = [day.strip() for day in block["days"].split(",")]
+                section1 = event1["section"]
+                section2 = event2["section"]
 
-        for day in days:
+                if section1 == section2:
+                    continue
 
-            for course in day_to_event_map.get(day, []):
+                if check_course_conflicts(
+                    event1["time_block"],
+                    event2["time_block"]
+                ):
+                    conflicts.append({
+                        "day": day,
+                        "section1": section1,
+                        "section2": section2,
+                        "time_block1": event1["time_block"],
+                        "time_block2": event2["time_block"],
+                    })
 
-                if check_course_conflicts(block, course["time_block"]):
-                    conflicts.add(course["section"])
-
-    return list([model_to_dict(course) for course in conflicts])
+    if conflicts:
+        raise CourseTimeConflictException(f'These sections are conflicting: {conflicts}')
 
 
 # Checks if course data in the DB is from a previous semester and runs the cron job if so

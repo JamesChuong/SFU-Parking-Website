@@ -45,13 +45,13 @@ def get_lecture_sections(request, course_id: int):
         # Non-lecture sections which are meant to be taken on their own (e.g, physics labs)
         standalone_non_lecture_sections = NonLectureSection.objects.filter(lecture_section=None, title=course.title)
 
-        lectures = [{"id": ls.id, "department_code": ls.department_code, "number": ls.number, "title": ls.title,
+        lectures = [{"id": ls.id, "department_code": ls.department_code, "course_number": ls.course_number, "title": ls.title,
                  "section_code": ls.section_code, "professor": ls.professor, "schedule": ls.schedule,
                  "start_date": ls.start_date, "end_date": ls.end_date, "campus": ls.campus}
                 for ls in lecture_sections
                 ]
 
-        non_lectures = [{"id": ls.id, "department_code": ls.department_code, "number": ls.number, "title": ls.title,
+        non_lectures = [{"id": ls.id, "department_code": ls.department_code, "course_number": ls.course_number, "title": ls.title,
                  "section_code": ls.section_code, "professor": ls.professor, "schedule": ls.schedule,
                  "start_date": ls.start_date, "end_date": ls.end_date, "campus": ls.campus}
                 for ls in standalone_non_lecture_sections
@@ -80,7 +80,7 @@ def get_non_lecture_sections(request, lecture_section_id):
     non_lecture_sections = lecture_section.non_lecture_sections.all()  # Use the new related_name
 
     data = [
-        {"id": nls.id, "department_code": nls.department_code, "number": nls.number, "title": nls.title, "section_code": nls.section_code,
+        {"id": nls.id, "department_code": nls.department_code, "course_number": nls.course_number, "title": nls.title, "section_code": nls.section_code,
          "professor": nls.professor, "schedule": nls.schedule,
          "start_date": nls.start_date, "end_date": nls.end_date, "campus": nls.campus}
         for nls in non_lecture_sections
