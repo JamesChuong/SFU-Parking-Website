@@ -9,4 +9,4 @@ admin.site.register(LectureSection)
 admin.site.register(NewSemesterNotification)
 admin.site.register(OneTimePassword)
 admin.site.register(Department)
-admin.site.site_header = 'TransitTail'
+admin.site.site_header = 'SFU PassShare Admin Portal'

@@ -58,8 +58,6 @@ def get_lecture_sections(request, course_id: int):
                 for ls in standalone_non_lecture_sections
                 ]
 
-        print(non_lectures)
-
         lectures.extend(non_lectures)
 
         return JsonResponse(lectures, safe=False, status=status.HTTP_200_OK)
