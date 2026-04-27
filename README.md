@@ -165,7 +165,7 @@ docker compose up --build # For rebuilding the containers
 python manage.py runserver
 ```
 
-#### Run the development server locally (Optional)
+#### Run the Vite server locally (Optional)
 ```bash
 npm run dev
 ```
