@@ -3,7 +3,7 @@ import type {LoginData, LogoutData, RegistrationData} from "../interfaces/reques
 
 async function registerUser(request: RegistrationData) {
 
-    const response = await api_service.post("/api/user/", request);
+    const response = await api_service.post("/user/", request);
 
     if (response.status !== 201){
         throw Error(response.data);
@@ -13,7 +13,7 @@ async function registerUser(request: RegistrationData) {
 
 async function loginUser(request: LoginData) {
 
-    const response = await api_service.post("/api/token/", request);
+    const response = await api_service.post("/token/", request);
 
     if (response.status != 200) {
         throw Error(response.data);
@@ -27,7 +27,7 @@ async function loginUser(request: LoginData) {
 }
 
 async function logoutUser(request: LogoutData) {
-    const response = await api_service.post("/api/logout/", request);
+    const response = await api_service.post("/logout/", request);
 
     if (response.status != 205){
         throw Error(response.data)

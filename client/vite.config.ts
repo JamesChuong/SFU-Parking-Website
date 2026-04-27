@@ -13,9 +13,20 @@ export default defineConfig({
           '@': path.resolve(__dirname, './src'),
         },
     },
-    server: {
-        proxy: {
-            "/api": "http://localhost:8000",
-        },
-    }
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    watch: {
+      usePolling: true, // Essential for Windows/WSL or systems where native events fail
+    },
+    hmr: {
+      clientPort: 5173, // Ensures the browser connects to the correct port for HMR
+    },
+    proxy: {
+      "/api": {
+        target: "http://django:8000",
+        changeOrigin: true,
+      },
+    },
+  },
 })

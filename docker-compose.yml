@@ -5,15 +5,17 @@ services:
   client:
     build:
       context: ./client
-    container_name: react_nginx
+    container_name: client
+#    ports:
+#      - "80:8080"
     ports:
-      - "80:8080"
+      - "5173:5173"
     depends_on:
       - django
 
   django:
 
-    container_name: django_server
+    container_name: server
 
     build:
       context: ./server
@@ -30,6 +32,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_USER: ${DB_USER}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DEBUG: ${DEBUG}
       EMAIL_HOST: ${EMAIL_HOST}
       EMAIL_PORT: ${EMAIL_PORT}
@@ -68,6 +71,7 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DJANGO_SETTINGS_MODULE: backend.settings
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: ${DB_NAME}
@@ -101,6 +105,7 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DJANGO_SETTINGS_MODULE: backend.settings
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: ${DB_NAME}
