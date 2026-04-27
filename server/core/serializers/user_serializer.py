@@ -1,0 +1,41 @@
+# extra_kwargs is for extra keyword arguments on 'password' to make it 128 characters
+# https://www.django-rest-framework.org/api-guide/serializers/#additional-keyword-arguments
+from django.db.models import Q
+from rest_framework import serializers
+
+from core.serializers.course_serializers import LectureSectionSerializer, NonLectureSectionSerializer
+from core.models import User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    lecture_sections = LectureSectionSerializer(many=True, read_only=True)
+    non_lecture_sections = NonLectureSectionSerializer(many=True, read_only=True)
+    username = serializers.CharField(validators=[])
+    email = serializers.EmailField(validators=[])
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'password', 'lecture_sections', 'non_lecture_sections']
+        # Password length is set to 128 characters per OWASP
+        # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-length
+        extra_kwargs = {
+            'password': {'write_only': True, 'max_length': 128},
+            'username': {'max_length': 50}
+        }
+
+    def validate(self, data):
+
+        existing_user = User.objects.filter(
+            Q(email=data['email']) | Q(username=data['username'])
+        )
+
+        if existing_user.exists():
+            raise serializers.ValidationError({"error": "An account with that username or email already exists"})
+
+        return data
+
+    def create(self, validated_data):
+        user = User.objects.create_user(email=validated_data['email'], username=validated_data['username'],
+                                        password=validated_data['password'])
+        user.save()
+        return user

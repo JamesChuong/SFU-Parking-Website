@@ -1,40 +1,66 @@
 import uuid
+from datetime import timedelta
+from django.utils.timezone import now
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.utils.crypto import get_random_string
+from django.contrib.auth.hashers import make_password
 
 model = models.Model
 
 
-#Class representing a course a student is taking
+# Semester inner class for defining Semester TextChoices
+class Semester(models.TextChoices):
+    SPRING = "1", "Spring"
+    SUMMER = "2", "Summer"
+    FALL = "3", "Fall"
+
+
+class Component(models.TextChoices):
+    LAB = "LAB", "Lab"
+    TUTORIAL = "TUT", "Tutorial"
+    SEMINAR = "SEM", "Seminar"
+    LECTURE = "LEC", "Lecture"
+
+
+class Department(models.Model):
+    DoesNotExist = None
+    objects = models.Manager()
+
+    code = models.CharField(max_length=100, default='Untitled', db_index=True)
+    name = models.CharField(max_length=100, default='Untitled', db_index=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.name} (Department)"
+
+    def save(self, *args, **kwargs):
+        self.code = self.code.upper()
+        super().save(*args, **kwargs)
+
+
+# Class representing a course a student is taking
 class Course(models.Model):
+    DoesNotExist = None
     objects = models.Manager()  # Explicitly adding objects manager
 
-    # Semester inner class for defining Semester TextChoices
-    class Semester(models.TextChoices):
-        SPRING = "1", "Spring"
-        SUMMER = "2", "Summer"
-        FALL = "3", "Fall"
+    department = models.ForeignKey(Department, related_name="courses", on_delete=models.CASCADE, null=True)
 
-    class Component(models.TextChoices):
-        LAB = "LAB", "Lab"
-        TUTORIAL = "TUT", "Tutorial"
-        SEMINAR = "SEM", "Seminar"
-        LECTURE = "LEC", "Lecture"
-
-    # info
     title = models.CharField(max_length=100, default='Untitled', db_index=True)
-    department = models.CharField(max_length=100, default='No department')
-    course_number = models.CharField(max_length=10, default='000') # 125, 225, etc.
+    department_code = models.CharField(max_length=100, default='No department')
+    course_number = models.CharField(max_length=10, default='000')  # 125, 225, etc.
 
     # The __str method below makes the Django Course model readable for when you do print(course)
     def __str__(self):
-        #return f"{self.department} {self.course_number} - {self.title} ({self.section_name})"
-        #return f"{self.department} {self.class_number}" old (before Aug 30)
-        return f"{self.department} {self.course_number} - {self.title}"
+        return f"{self.department_code} {self.course_number} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        self.department = self.department
+        super().save(*args, **kwargs)
 
 
 class LectureSection(models.Model):
+    DoesNotExist = None
     objects = models.Manager()
 
     course = models.ForeignKey(
@@ -45,7 +71,9 @@ class LectureSection(models.Model):
     )
 
     section_code = models.CharField(max_length=10)
+    start_time = models.TimeField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     schedule = models.JSONField(null=True, blank=True)
     campus = models.CharField(max_length=50, null=True, blank=True)
@@ -53,15 +81,21 @@ class LectureSection(models.Model):
     professor = models.CharField(max_length=100, null=True, blank=True)
     associated_class = models.CharField(max_length=50, default=0)
     title = models.CharField(max_length=100, default='Untitled')
-    number = models.CharField(max_length=100, default='000')
+    department_code = models.CharField(max_length=100, default='No department')
+    course_number = models.CharField(max_length=100, default='000')
     delivery_method = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.course.title} - {self.section_code} (Lecture)"
+        return f"{self.title} - {self.section_code} (Lecture)"
+
+    def save(self, *args, **kwargs):
+        self.department = self.department_code
+        super().save(*args, **kwargs)
 
 
 # Represents a section of a course (Tutorial, Lab, etc.)
 class NonLectureSection(models.Model):
+    DoesNotExist = None
     objects = models.Manager()
 
     lecture_section = models.ForeignKey(
@@ -75,20 +109,28 @@ class NonLectureSection(models.Model):
     class_type = models.CharField(max_length=10)  # e.g., "e" or "n"
     associated_class = models.CharField(max_length=10, default=0)
     title = models.CharField(max_length=100, default="Untitled")
+    start_time = models.TimeField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     schedule = models.JSONField(null=True, blank=True)
     campus = models.CharField(max_length=100, null=True, blank=True)
     professor = models.CharField(max_length=100, null=True, blank=True)
-    number = models.CharField(max_length=100, default='000')
+    department_code = models.CharField(max_length=100, default='No department')
+    course_number = models.CharField(max_length=100, default='000')
 
     def __str__(self):
         return f"{self.title} - {self.section_code} ({self.class_type})"
 
+    def save(self, *args, **kwargs):
+        self.department = self.department_code
+        super().save(*args, **kwargs)
+
 
 class User(AbstractUser):
     DoesNotExist = None
-    courses = models.ManyToManyField('Course', related_name='users', blank=True)
+    lecture_sections = models.ManyToManyField('LectureSection', related_name='users', blank=True)
+    non_lecture_sections = models.ManyToManyField('NonLectureSection', related_name='users', blank=True)
 
     groups = models.ManyToManyField(
         Group,
@@ -105,3 +147,58 @@ class User(AbstractUser):
         help_text='Specific permissions for this user.',
         verbose_name='user permissions',
     )
+
+
+# A notification to a user that their schedule has been cleared for the next semester
+class NewSemesterNotification(models.Model):
+    DoesNotExist = None
+    objects = models.Manager()
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='new_semester_notifications',
+        null=True,
+        default=None,
+    )
+
+    message = models.TextField()
+
+    term = models.CharField(
+        max_length=6,
+        null=True,
+        choices=Semester.choices,
+        default=None
+    )
+
+    year = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.user} - {self.message} - {self.term} - {self.year}"
+
+
+class OneTimePassword(models.Model):
+    DoesNotExist = None
+    objects = models.Manager()
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='verification_code',
+        null=True,
+        default=None,
+    )
+
+    email = models.EmailField(unique=True)
+    otp = models.CharField(max_length=128, blank=True, null=True)
+    otp_expiry_date = models.DateTimeField(blank=True, null=True)
+    otp_verified = models.BooleanField(default=False)
+
+    def generate_otp(self, otp):
+        self.otp = make_password(otp)  # Hashes the OTP for extra security
+        self.otp_expiry_date = now() + timedelta(minutes=10)  # 10-minute window
+        self.otp_verified = False
+        self.save()
+
+    def __str__(self):
+        return f"{self.user} - {self.otp} - Expires at {self.otp_expiry_date}"

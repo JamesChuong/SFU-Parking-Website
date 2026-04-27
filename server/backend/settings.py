@@ -13,6 +13,7 @@ from datetime import timedelta
 from pathlib import Path
 import os
 import dotenv
+from celery.schedules import crontab
 
 dotenv.load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,16 +28,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
 
 
 # Application definition
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", 'http://127.0.0.1:3000']
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
 
 # CORS_ALLOW_HEADERS = (
 #     "accept",
@@ -47,7 +48,9 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:3000", 'http://127.0.0.1:3000']
 #     "x-requested-with",
 # )
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000",]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+]
 
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CSRF_COOKIE_SAMESITE = 'Lax'
@@ -55,6 +58,13 @@ CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTP_ONLY = True
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = 'Lax'
+
+# Celery configuration
+
+CELERY_BROKER_URL = "redis://redis:6379"
+CELERY_RESULT_BACKEND = "redis://redis:6379"
+CELERY_TIMEZONE = "America/Vancouver"
+CELERY_IMPORTS = "core.cron"
 
 INSTALLED_APPS = [
     # Django apps
@@ -79,6 +89,19 @@ REST_FRAMEWORK = {
      'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
       ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'core.throttling.BurstAnonRateThrottle',
+        'core.throttling.SustainedAnonRateThrottle',
+        'core.throttling.BurstUserRateThrottle',
+        'core.throttling.SustainedUserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon_burst': '20/min',
+        'anon_sustained': '200/day',
+        'user_burst': '60/min',
+        'user_sustained': '2000/day',
+        'password_reset_request': '2/min'
+    }
 }
 
 
@@ -94,10 +117,10 @@ MIDDLEWARE = [
 ]
 
 SIMPLE_JWT = {
-     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
      'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
      'ROTATE_REFRESH_TOKENS': True,
-     'BLACKLIST_AFTER_ROTATION': False
+     'BLACKLIST_AFTER_ROTATION': True
 }
 
 ROOT_URLCONF = "backend.urls"
@@ -153,6 +176,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
 ]
+
+
+# Email Settings
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true") == "true"
+EMAIL_USE_SSL = not os.getenv("EMAIL_USE_SSL", "false") == "false"
+
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 
 # Internationalization
@@ -222,9 +257,34 @@ LOGGING = {
     },
 }
 
-# Django cron
-# This registers the cron job
-CRON_CLASSES = [
-    'core.cron.SyncCoursesCronJob',
-]
+# # Django cron
+# # This registers the cron job
+# CRON_CLASSES = [
+#     'core.cron.SyncCoursesCronJob',
+# ]
 
+# This registers the cron jobs for Celery to execute
+CELERY_BEAT_SCHEDULE = {
+    "update_course_data": {
+        "task": "core.cron.update_course_data",
+        "schedule": crontab(hour=0, minute=0, day_of_month='1', month_of_year='1,5,9')  # Every 4 months (Jan, May, Sept)
+    },
+    "remove_blacklisted_tokens": {
+        "task": "core.cron.remove_blacklisted_tokens",
+        "schedule": crontab(minute=0, hour=0)  # Once a day at midnight
+    },
+    "remove_expired_otps": {
+        "task": "core.cron.remove_expired_otps",
+        "schedule": crontab(minute=0, hour=0)
+    }
+}
+
+
+# Production Security Settings
+if not DEBUG: 
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
