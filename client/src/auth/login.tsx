@@ -60,6 +60,7 @@ function LoginPage() {
 
         } catch (err: any) {
             setLoginError(err.message)
+            console.log(loginError) // Temporary
         }
     }
 
