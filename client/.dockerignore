@@ -3,3 +3,5 @@ dist
 .git
 .cache
 *.log
+Dockerfile
+docker-compose.yml
